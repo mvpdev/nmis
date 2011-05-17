@@ -19,15 +19,11 @@ from parsed_xforms.models import xform_instances, ParsedInstance
 from common_tags import *
 from xform_manager.models import XForm, Instance
 from nga_districts.models import LGA, Zone, State
+from deny_if_unauthorized import deny_if_unauthorized
 
 from parsed_xforms.view_pkgr import ViewPkgr
 
-read_all_data, created = Permission.objects.get_or_create(
-    name = "Can read all data",
-    content_type = ContentType.objects.get_for_model(Permission),
-    codename = "read_all_data"
-    )
-@permission_required("auth.read_all_data")
+@deny_if_unauthorized()
 def export_list(request):
     xforms = XForm.objects.all()
     context = RequestContext(request, {"xforms" : xforms})
@@ -91,6 +87,7 @@ def frequency_table(request, rows, columns):
         }
     return HttpResponse(json.dumps(table, indent=4))
 
+@deny_if_unauthorized()
 def submission_counts_by_lga(request, as_dict=False):
     dicts = ParsedInstance.objects.values(
         "lga", "instance__xform__title"
@@ -126,6 +123,7 @@ from django.forms.models import model_to_dict
 
 from collections import defaultdict
 
+@deny_if_unauthorized()
 def dashboard(request):
     rc = RequestContext(request)
     rc.xforms = XForm.objects.all()
