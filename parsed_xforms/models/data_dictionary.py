@@ -14,6 +14,9 @@ class DataDictionary(models.Model):
     class Meta:
         app_label = "parsed_xforms"
 
+    def __unicode__(self):
+        return self.xform.__unicode__()
+
     def get_survey_object(self):
         if not hasattr(self, "_survey"):
             qtd = QuestionTypeDictionary("nigeria")
@@ -183,7 +186,6 @@ class DataDictionary(models.Model):
 
     def get_data_for_excel(self):
         for d in self.get_parsed_instances_from_mongo():
-            self._collapse_other_into_select_one(d)
             self._remove_index_from_first_instance_of_repeat(d)
             self._rename_state_and_lga_keys(d)
             self._expand_select_all_that_apply(d)

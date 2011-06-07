@@ -100,6 +100,11 @@ def submission_counts_by_lga(request, as_dict=False):
     titles = [u"Agriculture", u"Education", u"Health", u"LGA", u"Water"]
     headers = [u"Zone", u"State", u"LGA"] + titles
 
+    dicts = ParsedInstance.objects.values("instance__xform__title", "lga").annotate(count=Count("id"))
+    counts = defaultdict(dict)
+    for d in dicts:
+        counts[d['lga']][d['instance__xform__title']] = d['count']
+
     lgas = get_lgas()
     rows = []
     for lga in lgas:
@@ -107,9 +112,7 @@ def submission_counts_by_lga(request, as_dict=False):
                lga.state.name,
                lga.name,]
         for title in titles:
-            count = ParsedInstance.objects.filter(
-                lga=lga, instance__xform__title=title
-                ).count()
+            count = counts[lga.id].get(title, 0)
             row.append(count)
         rows.append(row)
 
@@ -164,6 +167,11 @@ def state_count_dict():
 
     states_list = []
 
+    dicts = ParsedInstance.objects.values("instance__xform__title", "lga").annotate(count=Count("id"))
+    counts = defaultdict(dict)
+    for d in dicts:
+        counts[d['lga']][d['instance__xform__title']] = d['count']
+
     for lga in lga_query.all():
         totals_for_this_lga = {}
         cur_state = lga.state
@@ -181,12 +189,7 @@ def state_count_dict():
 
         lga_total = 0
         for title in titles:
-            # todo: calculating these counts should be done with a
-            # single query outside of these two loops, it will be much
-            # faster.
-            count = ParsedInstance.objects.filter(
-                        lga=lga, instance__xform__title=title
-                    ).count()
+            count = counts[lga.id].get(title, 0)
             state_totals[cur_state][title] += count
             zone_totals[cur_zone][title] += count
             survey_totals[title] += count
@@ -214,25 +217,26 @@ def state_count_dict():
             lga_totals_by_title = []
             for title in titles:
                 lga_totals_by_title.append(cur_lga_total[title])
-            lga_list.append(
+            if cur_lga_total['total'] > 0:
+                lga_list.append(
+                    {
+                        'name': lga.name,
+                        'total_count': cur_lga_total['total'],
+                        'pk': lga.id,
+                        'survey_totals_by_title': lga_totals_by_title
+                        }
+                    )
+        if state_total > 0:
+            row_groups.append(
                 {
-                    'name': lga.name,
-                    'total_count': cur_lga_total['total'],
-                    'pk': lga.id,
-                    'survey_totals_by_title': lga_totals_by_title
+                    'zone_name': state.zone.name,
+                    'name': state.name,
+                    'survey_totals_by_title': totals_by_title,
+                    'total_count': state_total,
+                    'lga_count': len(lga_list),
+                    'lga_list': lga_list
                     }
                 )
-
-        row_groups.append(
-            {
-                'zone_name': state.zone.name,
-                'name': state.name,
-                'survey_totals_by_title': totals_by_title,
-                'total_count': state_total,
-                'lga_count': len(lga_list),
-                'lga_list': lga_list
-                }
-            )
 
     return {
         'survey_titles': titles,

@@ -535,7 +535,7 @@ var MapKey = (function(){
 			this._contents = o;
 			var ll = o['location/gps'].split(" ");
 			this.gps = {lat: ll[0], lng: ll[1]};
-			this.surveyType = o._name;
+			this.surveyType = o._survey_type_slug;
 			this.surveyor = o._surveyor_name;
 			this.instanceId = o._id;
 			this.time = o.start_time;
@@ -550,13 +550,13 @@ var MapKey = (function(){
 			agriculture: "orange",
 			lga: "purple",
 			education: "green",
-			defaultColor: "purple"
+			defaultColor: "pink"
 		};
 		
 		_ActivityPoint.prototype.icon = function(){
 			var color;
 			if(this.surveyType==undefined) {
-				color = 'purple'
+				color = stColors.defaultColor;
 			} else {
 				color = stColors[this.surveyType.toLowerCase()]
 			}
