@@ -50,7 +50,6 @@ class State(NamedModel):
 
 
 class LGA(NamedModel):
-    geoid = models.PositiveIntegerField(null=True)
     state = models.ForeignKey(State, related_name="lgas")
     scale_up = models.BooleanField()
     unique_slug = models.TextField(null=True)
@@ -59,6 +58,7 @@ class LGA(NamedModel):
     latlng_str = models.TextField(null=True)
     survey_round = models.IntegerField(default=0)
     included_in_malaria_survey = models.BooleanField(default=False)
+    geoid = models.PositiveIntegerField(null=True)
 
     @classmethod
     def get_phase1_lga_names(cls):
