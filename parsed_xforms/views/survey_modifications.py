@@ -9,7 +9,7 @@ def hide_instance_field(request, instance_id, field_slug):
     i = Instance.objects.get(id=instance_id)
     action = "delete"
     xpath = field_slug
-    InstanceModificiation.objects.get_or_create(user=user,
+    InstanceModification.objects.get_or_create(user=user,
             instance=i, action='delete',
             xpath=field_slug)
     i.parsed_instance.save()

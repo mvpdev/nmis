@@ -6,4 +6,4 @@ from single_survey_submission import survey_responses, survey_media_files
 from median_survey_lengths import median_survey_lengths
 from deny_if_unauthorized import access_denied
 
-from survey_modificatons import hide_instance_field
+from survey_modifications import hide_instance_field
