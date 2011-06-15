@@ -50,6 +50,7 @@ class State(NamedModel):
 
 
 class LGA(NamedModel):
+    geoid = models.PositiveIntegerField(null=True)
     state = models.ForeignKey(State, related_name="lgas")
     scale_up = models.BooleanField()
     unique_slug = models.TextField(null=True)
