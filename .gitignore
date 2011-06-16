@@ -24,3 +24,5 @@ registration.xml
 
 # folder to hold csv files
 csvs
+
+custom_settings.py
