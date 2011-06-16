@@ -182,3 +182,5 @@ if TESTING_MODE:
     MEDIA_ROOT  = os.path.join(PROJECT_ROOT, 'test_static/')
 else:
     MEDIA_ROOT  = os.path.join(PROJECT_ROOT, 'static/')
+
+from custom_settings import *
