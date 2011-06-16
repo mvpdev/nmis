@@ -162,6 +162,7 @@ MONGO = {
 
 
 SITE_TITLE = "ODK Data Collection"
+LOGIN_REDIRECT_URL = "/"
 
 # set up the Mongo Database
 _c = Connection()
