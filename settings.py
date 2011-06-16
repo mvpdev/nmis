@@ -156,12 +156,12 @@ from pymongo import Connection
 import sys
 
 MONGO = {
-    "database name" : "odk",
-    "test database name" : "odk_test",
+    "database name" : "maba",
+    "test database name" : "maba_test",
     }
 
 
-SITE_TITLE = "Baseline Data Collection"
+SITE_TITLE = "ODK Data Collection"
 
 # set up the Mongo Database
 _c = Connection()
