@@ -2,9 +2,10 @@ import json
 from django.db import models
 from xform_manager.models import XForm
 from pyxform import QuestionTypeDictionary, SurveyElementBuilder
-from common_tags import XFORM_ID_STRING
-from parsed_xforms.models import xform_instances
+from common_tags import XFORM_ID_STRING, ID
+from parsed_xforms.models import xform_instances, ParsedInstance
 import re
+
 
 class DataDictionary(models.Model):
     xform = models.ForeignKey(XForm, related_name="data_dictionary")
@@ -32,15 +33,18 @@ class DataDictionary(models.Model):
             self._survey_elements = {}
             for e in self.get_survey_elements():
                 self._survey_elements[e.get_abbreviated_xpath()] = e
+
         def remove_all_indices(xpath):
             return re.sub(r"\[\d+\]", u"", xpath)
+
         clean_xpath = remove_all_indices(abbreviated_xpath)
         return self._survey_elements.get(clean_xpath)
 
     def get_label(self, abbreviated_xpath):
         e = self.get_element(abbreviated_xpath)
         # todo: think about multiple language support
-        if e: return e.get_label()
+        if e:
+            return e.get_label()
 
     def _remove_unwanted_keys(self, d):
         # we will remove respondents 4 and above
@@ -50,20 +54,24 @@ class DataDictionary(models.Model):
                 return int(m.group(1)) > 3
             return False
         for k in d.keys():
-            if respondent_index_above_three(k): del d[k]
+            if respondent_index_above_three(k):
+                del d[k]
             e = self.get_element(k)
-            if e is None: continue
-            if e.get_bind().get(u"readonly")==u"true()": del d[k]
+            if e is None:
+                continue
+            if e.get_bind().get(u"readonly") == u"true()":
+                del d[k]
 
     def get_xpath_cmp(self):
         if not hasattr(self, "_xpaths"):
             self._xpaths = [e.get_abbreviated_xpath() for e in self.get_survey_elements()]
+
         def xpath_cmp(x, y):
             # For the moment, we aren't going to worry about repeating
             # nodes.
             new_x = re.sub(r"\[\d+\]", u"", x)
             new_y = re.sub(r"\[\d+\]", u"", y)
-            if new_x==new_y:
+            if new_x == new_y:
                 return cmp(x, y)
             if new_x not in self._xpaths and new_y not in self._xpaths:
                 return 0
@@ -72,17 +80,19 @@ class DataDictionary(models.Model):
             elif new_y not in self._xpaths:
                 return -1
             return cmp(self._xpaths.index(new_x), self._xpaths.index(new_y))
+
         return xpath_cmp
 
     def get_column_key_cmp(self):
         rename_hack = {
-            u"state" : u"location/state_in_northwest",
-            u"lga" : u"location/lga_in_jigawa"
+            u"state": u"location/zone",
+            u"lga": u"location/zone"
             }
         xpath_cmp = self.get_xpath_cmp()
+
         def column_key_cmp(x, y):
-            return xpath_cmp(rename_hack.get(x,x),
-                             rename_hack.get(y,y))
+            return xpath_cmp(rename_hack.get(x, x), rename_hack.get(y, y))
+
         return column_key_cmp
 
     def _simple_get_variable_name(self, abbreviated_xpath):
@@ -93,7 +103,7 @@ class DataDictionary(models.Model):
         """
         if not hasattr(self, "_variable_names"):
             self._variable_names = json.loads(self.variable_names_json)
-            assert type(self._variable_names)==dict
+            assert type(self._variable_names) == dict
         if abbreviated_xpath in self._variable_names and \
                 self._variable_names[abbreviated_xpath]:
             return self._variable_names[abbreviated_xpath]
@@ -184,10 +194,22 @@ class DataDictionary(models.Model):
             d[new_key] = d[key]
             del d[key]
 
+    def _add_list_of_potential_duplicates(self, d):
+        parsed_instance = ParsedInstance.objects.get(instance__id=d[ID])
+        if parsed_instance.phone is not None and \
+                parsed_instance.start_time is not None:
+            qs = ParsedInstance.objects.filter(
+                phone=parsed_instance.phone,
+                start_time=parsed_instance.start_time
+                ).exclude(id=parsed_instance.id)
+            d['_potential_duplicates'] = \
+                ','.join([pi.instance.id for pi in qs])
+
     def get_data_for_excel(self):
         for d in self.get_parsed_instances_from_mongo():
             self._remove_index_from_first_instance_of_repeat(d)
             self._rename_state_and_lga_keys(d)
             self._expand_select_all_that_apply(d)
             self._remove_unwanted_keys(d)
+            self._add_list_of_potential_duplicates(d)
             yield d
