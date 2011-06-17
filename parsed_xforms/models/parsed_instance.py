@@ -12,7 +12,7 @@ from locations.models import District
 from nga_districts.models import LGA
 from common_tags import IMEI, DEVICE_ID, START_TIME, START, \
     END_TIME, END, LGA_ID, ID, SURVEYOR_NAME, ATTACHMENTS, \
-    SURVEY_TYPE, GEO_ID
+    SURVEY_TYPE, GEO_ID, GPS
 
 # this is Mongo Collection (SQL table equivalent) where we will store
 # the parsed submissions
@@ -53,22 +53,38 @@ class ParsedInstance(models.Model):
     def to_dict(self):
         if not hasattr(self, "_dict_cache"):
             self._dict_cache = self.instance.get_dict()
-        self._dict_cache.update(
-            {
-                ID: self.get_mongo_id(),
-                SURVEYOR_NAME:
-                    None if not self.surveyor else self.surveyor.name,
-                LGA_ID:
-                    None if not self.lga else self.lga.id,
-                GEO_ID:
-                    None if not self.lga else self.lga.geoid,
-                SURVEY_TYPE: self.instance.survey_type.slug,
-                ATTACHMENTS:
-                    [a.media_file.name for a in self.instance.attachments.all()],
-                u"_status": self.instance.status,
-                }
-            )
+        self._dict_cache['_percentage_complete'] = \
+            self._percentage_complete(self.Instance.get_dict())
+        self._dict_cache.update(self._fields_to_add_to_dict())
         return self._dict_cache
+
+    def _percentage_complete(self, d):
+        score = 0
+        denominator = 0
+        for k, v in d.iteritems():
+            denominator += 1
+            if v is not None:
+                score += 1
+        if GPS in d.keys():
+            denominator += len(d.keys())
+            if d[GPS] is not None:
+                score += len(d.keys())
+        return (100 * score) / denominator
+
+    def _fields_to_add_to_dict(self):
+        return {
+            ID: self.get_mongo_id(),
+            SURVEYOR_NAME:
+                None if not self.surveyor else self.surveyor.name,
+            LGA_ID:
+                None if not self.lga else self.lga.id,
+            GEO_ID:
+                None if not self.lga else self.lga.geoid,
+            SURVEY_TYPE: self.instance.survey_type.slug,
+            ATTACHMENTS:
+                [a.media_file.name for a in self.instance.attachments.all()],
+            u"_status": self.instance.status,
+            }
 
     def get_mongo_id(self):
         return self.instance.id
