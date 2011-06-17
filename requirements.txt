@@ -17,4 +17,4 @@ xlrd==0.7.1
 unittest2==0.5.1
 SQLAlchemy==0.6.7
 # want to avoid bull shit around deploying mysql
-MySQL-python==1.2.2
+MySQL-python>=1.2.2
