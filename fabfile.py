@@ -31,7 +31,7 @@ DEPLOYMENTS = {
 
 
 @hosts(DEFAULT_SETTINGS['host'])
-def deploy(deployment_name):
+def deploy(deployment_name, reparse="all"):
     """
     fab deploy:staging
 
@@ -123,5 +123,6 @@ def deploy(deployment_name):
     pull_code()
     install_pip_requirements()
     migrate_database()
-    # reparse_surveys()
+    if reparse == "all":
+        reparse_surveys()
     restart_web_server()
