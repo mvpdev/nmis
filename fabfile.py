@@ -1,8 +1,6 @@
 import os
 
-from fabric.api import *
-from fabric.contrib import files, console
-from fabric import utils
+from fabric.api import env, cd, run
 from fabric.decorators import hosts
 
 from datetime import datetime
@@ -43,52 +41,51 @@ def deploy(deployment_name, reparse="all"):
     6. Reparse surveys.
     7. Restart server.
     """
-    deployment = DEFAULT_SETTINGS.copy()
-    deployment.update(DEPLOYMENTS[deployment_name])
-    deployment['project_path'] = os.path.join(
-        deployment['deployments_path'],
-        deployment['folder_name']
+    env.update(DEFAULT_SETTINGS)
+    env.update(DEPLOYMENTS[deployment_name])
+    env.project_path = os.path.join(
+        env.deployments_path,
+        env.folder_name
         )
-    deployment['code_path'] = os.path.join(
-        deployment['project_path'],
+    env.code_path = os.path.join(
+        env.project_path,
         'nmis'
         )
-    deployment['apache_dir'] = os.path.join(
-        deployment['project_path'],
+    env.apache_dir = os.path.join(
+        env.project_path,
         'apache'
         )
-
 
     def backup_database():
         cur_timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         backup_directory_path = os.path.join(
-            COMMON_SETTINGS['deployments_path'],
+            env.deployments_path,
             'backups',
             cur_timestamp
             )
-        tarball_path = os.path.join(backup_directory_path, deployment['project_name'])
+        tarball_path = os.path.join(backup_directory_path, env.project_name)
         run("mkdir -p %s" % backup_directory_path)
         with cd(backup_directory_path):
-            run("mysqldump -u nmis -p$MYSQL_NMIS_PW %(database_name)s > %(database_name)s.sql" % deployment)
-            run("gzip %(database_name)s.sql" % deployment)
+            run("mysqldump -u nmis -p$MYSQL_NMIS_PW %(database_name)s > %(database_name)s.sql" % env)
+            run("gzip %(database_name)s.sql" % env)
 
     def pull_code():
         """
         Pulls updated code from nmis and xform_manager repos.
         """
         sub_repositories = ["xform_manager"]
-        sub_repo_paths = [os.path.join(deployment['code_path'], repo) for repo in sub_repositories]
-        with cd(deployment['code_path']):
-            run("git pull origin %(branch)s" % deployment)
+        sub_repo_paths = [os.path.join(env.code_path, repo) for repo in sub_repositories]
+        with cd(env.code_path):
+            run("git pull origin %(branch)s" % env)
 
         for repo_path in sub_repo_paths:
             with cd(repo_path):
-                run("git pull origin %(branch)s" % deployment)
+                run("git pull origin %(branch)s" % env)
 
     def _run_in_virtualenv(command):
         activate_path = os.path.join(
-            deployment['project_path'],
-            deployment['virtualenv_directory'],
+            env.project_path,
+            env.virtualenv_directory,
             'bin', 'activate'
             )
         activate_virtualenv = "source %s" % activate_path
@@ -99,26 +96,26 @@ def deploy(deployment_name, reparse="all"):
         deleting django-eav from the virtualenv in order to force a
         new download and avoid a pip error.
         """
-        with cd(deployment['code_path']):
+        with cd(env.code_path):
             _run_in_virtualenv("pip install -r requirements.txt")
 
     def migrate_database():
-        if deployment['migrate']:
-            with cd(deployment['code_path']):
+        if env.migrate:
+            with cd(env.code_path):
                 _run_in_virtualenv("python manage.py migrate")
 
     def reparse_surveys():
-        with cd(deployment['code_path']):
+        with cd(env.code_path):
             _run_in_virtualenv("python manage.py reparse")
 
     def restart_web_server():
         """
         touch wsgi file to trigger reload
         """
-        with cd(deployment['apache_dir']):
+        with cd(env.apache_dir):
             run("touch environment.wsgi")
 
-    if deployment['backup']:
+    if env.backup:
         backup_database()
     pull_code()
     install_pip_requirements()
