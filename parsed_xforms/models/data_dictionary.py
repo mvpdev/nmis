@@ -203,7 +203,7 @@ class DataDictionary(models.Model):
                 start_time=parsed_instance.start_time
                 ).exclude(id=parsed_instance.id)
             d['_potential_duplicates'] = \
-                ','.join([pi.instance.id for pi in qs])
+                ','.join([str(pi.instance.id) for pi in qs])
 
     def get_data_for_excel(self):
         for d in self.get_parsed_instances_from_mongo():
