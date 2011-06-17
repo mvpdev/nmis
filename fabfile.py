@@ -7,129 +7,121 @@ from fabric.decorators import hosts
 
 from datetime import datetime
 
-env.home = '/home/wsgi/'
-env.project = 'nmis'
-
-# modified this script from caktus 
-# https://bitbucket.org/copelco/caktus-deployment/src/tip/example-django-project/caktus_website/fabfile.py#cl-144
-
-def _setup_path():
-    env.root = os.path.join(env.home, 'srv', env.code_directory)
-    env.code_root = os.path.join(env.root, env.project)
-    env.apache_dir = os.path.join(env.root, "apache")
-    env.settings = '%(project)s.settings' % env
-    env.backup_dir = os.path.join(env.root, "backups")
-    env.run_migration = False
-
-def staging_env():
-    """ use staging environment on remote host"""
-    env.code_directory = 'nmis-staging'
-    env.environment = 'staging'
-    env.branch_name = 'develop'
-    _setup_path()
-
-def production_env():
-    """ use production environment on remote host"""
-    env.code_directory = 'nmis-production'
-    env.environment = 'production'
-    env.branch_name = 'master'
-    env.db_name = 'nmispilot_phaseII'
-    _setup_path()
-
-@hosts('wsgi@staging.mvpafrica.org')
-def deploy_staging(migrate_db='no'):
-    staging_env()
-    if migrate_db == 'migrate': env.run_migration = True
-    deploy()
-    restart_wsgi()
-
-@hosts('wsgi@staging.mvpafrica.org')
-def deploy_production(migrate_db='no'):
-    production_env()
-    if migrate_db == 'migrate': env.run_migration = True
-    deploy()
-    restart_wsgi()
-
-@hosts('wsgi@staging.mvpafrica.org')
-def backup_production():
-    production_env()
-    backup_database()
-
-def bootstrap():
-    """ initialize remote host environment (virtualenv, deploy, update) """
-    require('root', provided_by=('staging', 'production'))
-
-def backup_database():
-    cur_timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-    backup_directory_path = os.path.join(env.backup_dir, cur_timestamp)
-    tarball_path = os.path.join(backup_directory_path, env.project)
-    run("mkdir -p %s" % backup_directory_path)
-    
-    with cd(backup_directory_path):
-        run("mysqldump -u nmis -p$MYSQL_NMIS_PW %(db_name)s > %(db_name)s.sql" % env)
-        run("gzip %(db_name)s.sql" % env)
-
-@hosts('wsgi@staging.mvpafrica.org')
-def reparse_staging():
-    staging_env()
-    _run_reparse()
-
-@hosts('wsgi@staging.mvpafrica.org')
-def reparse_production():
-    production_env()
-    _run_reparse()
-
-def _run_reparse():
-    with cd(env.code_root):
-        run("python manage.py reparse")
-
-def deploy():
-    """ git pull (branch) """
-    #will pull the same branch as for the main repo
-    sub_repositories = ["xform_manager"]
-    sub_repo_paths = [os.path.join(env.code_root, repo) for repo in sub_repositories]
-    if env.environment == 'production':
-        if not console.confirm('Are you sure you want to deploy production? (Always back up-- "fab backup_production")',
-                               default=False):
-            utils.abort('Production deployment aborted.')
-    with cd(env.code_root):
-        run("git pull origin %(branch_name)s" % env)
-    
-    for repo_path in sub_repo_paths:
-        with cd(repo_path):
-            run("git pull origin %(branch_name)s" % env)
-    
-    if env.run_migration:
-        with cd(env.code_root):
-            run("python manage.py migrate")
-    
-    install_pip_requirements()
-
-def install_pip_requirements():
-    """ deleting django-eav from the virtualenv in order to force a new download and avoid a pip error. """
-    with cd(env.code_root):
-        run("pip install -r requirements.txt")
-
-def restart_wsgi():
-    """ touch wsgi file to trigger reload """
-    with cd(env.apache_dir):
-        run("touch environment.wsgi")
-
-def apache_restart():
-    """ restart Apache on remote host """
-    require('root', provided_by=('staging', 'production'))
-    run('sudo apache2ctl restart')
-
-# I need to import all the phase one data
-# find /home/amarder/host/Desktop/Phone\ Data\ Phase\ I/ -name "???" -exec python manage.py import_instances '{}' \;
-
-#the following method uses fab as an alternative to a shell script, which is
-#not a clean use of fab
-def local_ensure_git_subrepositories_loaded():
-    repositories_to_ensure = {
-        'xform_manager': 'git://github.com/mvpdev/xform_manager.git'
+DEFAULT_SETTINGS = {
+    'deployments_path': '/home/wsgi/srv',
+    'host': 'wsgi@staging.mvpafrica.org',
+    'project_name': 'nmis',
+    'virtualenv_directory': 'project_env',
+    'backup': True,
+    'migrate': True,
     }
-    current_dir = os.path.dirname(__file__)
-    for repo_name, repo_link in repositories_to_ensure.items():
-        if not os.path.exists(os.path.join(current_dir, repo_name)):
-            local('git clone %s' % repo_link)
+
+DEPLOYMENTS = {
+    'staging': {
+        'folder_name': 'nmis-staging',
+        'branch': 'develop',
+        'backup': False,
+        },
+    'production': {
+        'folder_name': 'nmis-production',
+        'branch': 'master',
+        'database_name': 'nmispilot_phaseII',
+        },
+    }
+
+
+@hosts(DEFAULT_SETTINGS['host'])
+def deploy(deployment_name):
+    """
+    fab deploy:staging
+
+    1. Back up database.
+    2. Pull updated code.
+    3. Activate virtualenv.
+    4. Install pip requirements.
+    5. Migrate database.
+    6. Reparse surveys.
+    7. Restart server.
+    """
+    deployment = DEFAULT_SETTINGS.copy()
+    deployment.update(DEPLOYMENTS[deployment_name])
+    deployment['project_path'] = os.path.join(
+        deployment['deployments_path'],
+        deployment['folder_name']
+        )
+    deployment['code_path'] = os.path.join(
+        deployment['project_path'],
+        'nmis'
+        )
+    deployment['apache_dir'] = os.path.join(
+        deployment['project_path'],
+        'apache'
+        )
+
+
+    def backup_database():
+        cur_timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+        backup_directory_path = os.path.join(
+            COMMON_SETTINGS['deployments_path'],
+            'backups',
+            cur_timestamp
+            )
+        tarball_path = os.path.join(backup_directory_path, deployment['project_name'])
+        run("mkdir -p %s" % backup_directory_path)
+        with cd(backup_directory_path):
+            run("mysqldump -u nmis -p$MYSQL_NMIS_PW %(database_name)s > %(database_name)s.sql" % deployment)
+            run("gzip %(database_name)s.sql" % deployment)
+
+    def pull_code():
+        """
+        Pulls updated code from nmis and xform_manager repos.
+        """
+        sub_repositories = ["xform_manager"]
+        sub_repo_paths = [os.path.join(deployment['code_path'], repo) for repo in sub_repositories]
+        with cd(deployment['code_path']):
+            run("git pull origin %(branch)s" % deployment)
+
+        for repo_path in sub_repo_paths:
+            with cd(repo_path):
+                run("git pull origin %(branch)s" % deployment)
+
+    def _run_in_virtualenv(command):
+        activate_path = os.path.join(
+            deployment['project_path'],
+            deployment['virtualenv_directory'],
+            'bin', 'activate'
+            )
+        activate_virtualenv = "source %s" % activate_path
+        run(activate_virtualenv + ' && ' + command)
+
+    def install_pip_requirements():
+        """
+        deleting django-eav from the virtualenv in order to force a
+        new download and avoid a pip error.
+        """
+        with cd(deployment['code_path']):
+            _run_in_virtualenv("pip install -r requirements.txt")
+
+    def migrate_database():
+        if deployment['migrate']:
+            with cd(deployment['code_path']):
+                _run_in_virtualenv("python manage.py migrate")
+
+    def reparse_surveys():
+        with cd(deployment['code_path']):
+            _run_in_virtualenv("python manage.py reparse")
+
+    def restart_web_server():
+        """
+        touch wsgi file to trigger reload
+        """
+        with cd(deployment['apache_dir']):
+            run("touch environment.wsgi")
+
+    if deployment['backup']:
+        backup_database()
+    pull_code()
+    install_pip_requirements()
+    migrate_database()
+    # reparse_surveys()
+    restart_web_server()
