@@ -54,7 +54,7 @@ class ParsedInstance(models.Model):
         if not hasattr(self, "_dict_cache"):
             self._dict_cache = self.instance.get_dict()
         self._dict_cache['_percentage_complete'] = \
-            self._percentage_complete(self.Instance.get_dict())
+            self._percentage_complete(self.instance.get_dict())
         self._dict_cache.update(self._fields_to_add_to_dict())
         return self._dict_cache
 
