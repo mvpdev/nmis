@@ -18,8 +18,17 @@ def deploy():
     for repo in sub_repositories.keys():
         pull_repo(os.path.join(env.code_root, repo), sub_repositories[repo])
     pull_repo(env.code_root, env.branch_name)
+    collectstatic(env.code_root)
 #    with cd(env.code_root):
 #        run("pip install -r requirements.pip")
+
+def run_in_venv(command):
+    run("source %s && python manage.py collectstatic --noinput" %
+                os.path.join(env.root, 'project_env', 'bin', 'activate'))
+
+def collectstatic(repo_path):
+    with cd(env.code_root):
+        run_in_venv('python manage.py collectstatic --noinput')
 
 def pull_repo(repo_path, repo_branch):
     with cd(repo_path):
