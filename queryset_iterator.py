@@ -17,4 +17,4 @@ def queryset_iterator(queryset, chunksize=100):
             yield row
         start += chunksize
         end += chunksize
-        print "number of objects collected:", gc.collect()
+        gc.collect()
