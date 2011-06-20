@@ -31,30 +31,25 @@ DEPLOYMENTS = {
 @hosts(DEFAULT_SETTINGS['host'])
 def deploy(deployment_name, reparse="all"):
     """
-    fab deploy:staging
-
-    1. Back up database.
-    2. Pull updated code.
-    3. Activate virtualenv.
-    4. Install pip requirements.
-    5. Migrate database.
-    6. Reparse surveys.
-    7. Restart server.
+    Example command line usage:
+    fab deploy:staging,reparse=none
     """
-    env.update(DEFAULT_SETTINGS)
-    env.update(DEPLOYMENTS[deployment_name])
-    env.project_path = os.path.join(
-        env.deployments_path,
-        env.folder_name
-        )
-    env.code_path = os.path.join(
-        env.project_path,
-        'nmis'
-        )
-    env.apache_dir = os.path.join(
-        env.project_path,
-        'apache'
-        )
+    def setup_env():
+        env.update(DEFAULT_SETTINGS)
+        env.update(DEPLOYMENTS[deployment_name])
+        env.project_path = os.path.join(
+            env.deployments_path,
+            env.folder_name
+            )
+        env.code_path = os.path.join(
+            env.project_path,
+            'nmis'
+            )
+        env.apache_dir = os.path.join(
+            env.project_path,
+            'apache'
+            )
+    setup_env()
 
     def backup_database():
         cur_timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
@@ -68,19 +63,16 @@ def deploy(deployment_name, reparse="all"):
         with cd(backup_directory_path):
             run("mysqldump -u nmis -p$MYSQL_NMIS_PW %(database_name)s > %(database_name)s.sql" % env)
             run("gzip %(database_name)s.sql" % env)
+    if env.backup:
+        backup_database()
 
     def pull_code():
         """
-        Pulls updated code from nmis and xform_manager repos.
+        Pull updated code from nmis repo.
         """
-        sub_repositories = ["xform_manager"]
-        sub_repo_paths = [os.path.join(env.code_path, repo) for repo in sub_repositories]
         with cd(env.code_path):
             run("git pull origin %(branch)s" % env)
-
-        for repo_path in sub_repo_paths:
-            with cd(repo_path):
-                run("git pull origin %(branch)s" % env)
+    pull_code()
 
     def _run_in_virtualenv(command):
         activate_path = os.path.join(
@@ -98,15 +90,19 @@ def deploy(deployment_name, reparse="all"):
         """
         with cd(env.code_path):
             _run_in_virtualenv("pip install -r requirements.txt")
+    install_pip_requirements()
 
     def migrate_database():
         if env.migrate:
             with cd(env.code_path):
                 _run_in_virtualenv("python manage.py migrate")
+    migrate_database()
 
     def reparse_surveys():
         with cd(env.code_path):
             _run_in_virtualenv("python manage.py reparse")
+    if reparse == "all":
+        reparse_surveys()
 
     def restart_web_server():
         """
@@ -114,12 +110,4 @@ def deploy(deployment_name, reparse="all"):
         """
         with cd(env.apache_dir):
             run("touch environment.wsgi")
-
-    if env.backup:
-        backup_database()
-    pull_code()
-    install_pip_requirements()
-    migrate_database()
-    if reparse == "all":
-        reparse_surveys()
     restart_web_server()
