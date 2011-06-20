@@ -93,10 +93,7 @@ def reset_values():
         # it seems to be the only way to get this to not fail
         # every other time i run it.
         xform_db.instances.drop()
-    
-    for x in Instance.objects.all():
-        pi = ParsedInstance.objects.filter(instance=x)
-        if pi.count() > 0:
-            x.parsed_instance.delete()
-    for s in Surveyor.objects.all(): s.delete()
+
+    ParsedInstance.objects.all().delete()
+    Surveyor.objects.all().delete()
     return reset_stuff.__doc__.strip()
