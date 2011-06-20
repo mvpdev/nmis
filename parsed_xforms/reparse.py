@@ -5,6 +5,7 @@ from xform_manager.models import Instance, XForm
 from parsed_xforms.models import ParsedInstance, Registration
 from nga_districts import models as nga_models
 from surveyor_manager.models import Surveyor
+from queryset_iterator import queryset_iterator
 
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -43,7 +44,7 @@ def reparse_all(*args, **kwargs):
 
     # Delete all parsed instances.
     ParsedInstance.objects.all().delete()
-    for i in Instance.objects.all().iterator():
+    for i in queryset_iterator(Instance.objects.all()):
         # There are a few instances that throw errors
         try:
             ParsedInstance.objects.create(instance=i)
