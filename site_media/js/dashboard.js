@@ -178,11 +178,19 @@
         this.helper('addMapLoadCallback', function(cb){mapLoadCallbacks.push(cb);})
         this.helper('Map', function(cb){
             mapLoadCallbacks.push(cb);
+            var gmapOptions = function(){
+                return {
+                    zoom: 6,
+                    center: new google.maps.LatLng(9.243092645104804, 7.9156494140625),
+                    mapTypeId: 'terrain',
+                    mapTypeControl: false
+                }
+            }
             if(!loadFinished) {
                 var sammyObj = this;
                 gmapElem.bind('gmapLoaded', function(){
                     //make the map and call the callback with the first argument as the map object
-                    gmap = new google.maps.Map(gmapElem.get(0), {zoom:6,center:new google.maps.LatLng(9.243092645104804, 7.9156494140625), mapTypeId:'terrain', mapTypeControl: false});
+                    gmap = new google.maps.Map(gmapElem.get(0), gmapOptions());
 					var l = new google.maps.KmlLayer("/site-media/kml/113_lgas.kml", {
 						preserveViewport: true,
 						suppressInfoWindows: true,
@@ -190,19 +198,16 @@
 					});
                     _map = gmap;
                     map.map = gmap;
-//                    cb.call(map);
                     $(mapLoadCallbacks).each(function(){
                         this.call(map);
-                    })
+                    });
                 });
             } else {
                 if(!gmap) {
-                    gmap = new google.maps.Map(gmapElem.get(0), {zoom:6,center:new google.maps.LatLng(9.243092645104804, 7.9156494140625), mapTypeId:'terrain', mapTypeControl: false });
-		//			addNga113Map(gmap);
+                    gmap = new google.maps.Map(gmapElem.get(0), gmapOptions());
                     map.map = gmap;
                     _map = gmap;
                 }
-                // cb.call(map);
                 $(mapLoadCallbacks).each(function(){
                     this.call(map);
                 })
@@ -404,14 +409,21 @@ var MapKey = (function(){
 	})();
 	
 	function InstancePopup(activityPoint, data) {
-		var popupElem = $("<div />", {'style':'max-height:500px;overflow:auto'});
+		var popupElem = $("<div />").css({'max-height':500, 'overflow':'auto'});
 		if(activityPoint.imageUrl) {
 			popupElem.append($("<div />", {'class': 'instance-image'}).html());
 		}
+		var instanceId = activityPoint.instanceId;
 		var topContext = $("<tbody />");
 //		topContext.append($("<tr />", {'rowspan':4}).html())
 		var link = $("<a />", {'href': activityPoint.imageUrl, target: '_blank', 'class': 'img-link'}).html($("<img />", {'src': activityPoint.imageUrl}));
+		var deleteGps = $("<a />", {href:'#'}).text("Remove GPS Point from Map");
+		deleteGps.click(function(){
+		    $.getJSON('/xforms/hide_field/'+instanceId+'/location/gps');
+		    return false;
+		});
 		var tcWrap = $("<div />", {'class':'clearfix'}).append(link).append($("<table />", {'class':'popup-context'}).html(topContext));
+		tcWrap.append(deleteGps);
 		var ddList = $("<dl />", {'style':'clear:both'});
 		$.each(data, function(i, qaPair){
 			if(qaPair[0]=="imei") {

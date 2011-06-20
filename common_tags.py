@@ -28,6 +28,7 @@ NAME = u"name"
 # extra fields that we're adding to our mongo doc
 SURVEYOR_NAME = u"_surveyor_name"
 LGA_ID = u"_lga_id"
+GEO_ID = u"_geo_id"
 ATTACHMENTS = u"_attachments"
 DATE = u"_date"
 
