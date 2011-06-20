@@ -1,18 +1,17 @@
 import os
-
 from fabric.api import env, cd, run
-from fabric.decorators import hosts
-
 from datetime import datetime
 
-DEFAULT_SETTINGS = {
-    'deployments_path': '/home/wsgi/srv',
-    'host': 'wsgi@staging.mvpafrica.org',
-    'project_name': 'nmis',
-    'virtualenv_directory': 'project_env',
-    'backup': True,
-    'migrate': True,
-    }
+# default settings for all deployments
+env.update(
+    {
+        'deployments_path': '/home/wsgi/srv',
+        'hosts': ['wsgi@staging.mvpafrica.org'],
+        'project_name': 'nmis',
+        'virtualenv_directory': 'project_env',
+        'migrate': True,
+        }
+    )
 
 DEPLOYMENTS = {
     'staging': {
@@ -23,48 +22,51 @@ DEPLOYMENTS = {
     'production': {
         'folder_name': 'nmis-production',
         'branch': 'master',
-        'database_name': 'nmispilot_phaseII',
+        'backup': True,
+        'database_name': 'nmispilot_phaseII',  # todo: remove hard code
         },
     }
 
 
-@hosts(DEFAULT_SETTINGS['host'])
+def _setup_env(deployment_name):
+    env.update(DEPLOYMENTS[deployment_name])
+    env.project_path = os.path.join(
+        env.deployments_path,
+        env.folder_name
+        )
+    env.code_path = os.path.join(
+        env.project_path,
+        'nmis'
+        )
+    env.apache_dir = os.path.join(
+        env.project_path,
+        'apache'
+        )
+
+
+def backup(deployment_name):
+    _setup_env(deployment_name)
+    cur_timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    env.backup_directory_path = os.path.join(
+        env.project_path,
+        'backups',
+        cur_timestamp
+        )
+    run("mkdir -p %(backup_directory_path)s" % env)
+    with cd(env.backup_directory_path):
+        run("mysqldump -u nmis -p$MYSQL_NMIS_PW %(database_name)s > %(database_name)s.sql" % env)
+        run("gzip %(database_name)s.sql" % env)
+
+
 def deploy(deployment_name, reparse="all"):
     """
     Example command line usage:
     fab deploy:staging,reparse=none
     """
-    def setup_env():
-        env.update(DEFAULT_SETTINGS)
-        env.update(DEPLOYMENTS[deployment_name])
-        env.project_path = os.path.join(
-            env.deployments_path,
-            env.folder_name
-            )
-        env.code_path = os.path.join(
-            env.project_path,
-            'nmis'
-            )
-        env.apache_dir = os.path.join(
-            env.project_path,
-            'apache'
-            )
-    setup_env()
+    _setup_env(deployment_name)
 
-    def backup_database():
-        cur_timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        backup_directory_path = os.path.join(
-            env.deployments_path,
-            'backups',
-            cur_timestamp
-            )
-        tarball_path = os.path.join(backup_directory_path, env.project_name)
-        run("mkdir -p %s" % backup_directory_path)
-        with cd(backup_directory_path):
-            run("mysqldump -u nmis -p$MYSQL_NMIS_PW %(database_name)s > %(database_name)s.sql" % env)
-            run("gzip %(database_name)s.sql" % env)
     if env.backup:
-        backup_database()
+        backup(deployment_name)
 
     def pull_code():
         """
