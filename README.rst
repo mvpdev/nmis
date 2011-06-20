@@ -1,4 +1,4 @@
-NMIS Project v0.76
+NMIS Project v0.77
 ==================
 
 Installation
