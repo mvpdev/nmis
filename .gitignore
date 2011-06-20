@@ -1,8 +1,5 @@
 custom_settings.py
 
-pyxform
-xform_manager
-eav
 site_media/attachments
 
 tmp/*
@@ -26,3 +23,5 @@ registration.xml
 
 # folder to hold csv files
 csvs
+
+static
