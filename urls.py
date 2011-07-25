@@ -19,7 +19,7 @@ urlpatterns = patterns('',
     url(r"^%sformList$" % OPT_GROUP_REGEX, xform_manager_views.formList),
     url(r"^%ssubmission$" % OPT_GROUP_REGEX, xform_manager_views.submission),
     (r'^xform_manager/', include('nmis.xform_manager.urls')),
-    (r'^sentry/', include('sentry.urls')),
+    # (r'^sentry/', include('sentry.urls')),
     (r'^xforms/', include('parsed_xforms.urls')),
     (r'^$', include('parsed_xforms.urls')),
 )
