@@ -7,6 +7,7 @@ import os
 from parsed_xforms.views import csv_export
 from django.core.urlresolvers import reverse
 import csv
+import json
 
 
 class TestTransportationSurvey(TestCase):
@@ -94,3 +95,12 @@ class TestTransportationSurvey(TestCase):
 
         # TODO: Headers should be determined by the survey definition,
         # not the data received.
+
+    def test_data_dictionary_headers(self):
+        l = list(self.xform.data_dictionary.all())
+        self.assertTrue(len(l) == 1)
+        dd = l[0]
+        with open(os.path.join(self.test_path, "headers.json")) as f:
+            expected_list = json.load(f)
+        self.maxDiff = None
+        self.assertEqual(dd.get_headers(), expected_list)
