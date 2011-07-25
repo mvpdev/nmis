@@ -7,21 +7,24 @@ from django.core.urlresolvers import reverse
 import json
 import re
 from xform_manager.xform_instance_parser import xform_instance_to_dict
-from parsed_xforms.views.xls_export import XlsWriter, DictOrganizer, DataDictionaryWriter
+from parsed_xforms.views.xls_export import XlsWriter, DictOrganizer, \
+    DataDictionaryWriter
+
 
 class TestSurveyView(TestCase):
-    
+
     def setUp(self):
-        self.survey = create_survey_from_xls("parsed_xforms/tests/name_survey.xls")
+        file_path = "parsed_xforms/tests/name_survey.xls"
+        self.survey = create_survey_from_xls(file_path)
         self.xform = XForm.objects.create(xml=self.survey.to_xml())
         json_str = json.dumps(self.survey.to_dict())
         self.data_dictionary = DataDictionary.objects.create(
             xform=self.xform, json=json_str)
 
         info = {
-            "survey_name" : self.survey.get_name(),
-            "id_string" : self.survey.id_string(),
-            "name" : "Andrew"
+            "survey_name": self.survey.get_name(),
+            "id_string": self.survey.id_string(),
+            "name": "Andrew"
             }
         xml_str = u'<?xml version=\'1.0\' ?><%(survey_name)s id="%(id_string)s"><name>%(name)s</name></%(survey_name)s>' % info
         self.instance = Instance.objects.create(xml=xml_str)
@@ -124,5 +127,4 @@ Content-Type: text/html; charset=utf-8
         dd_writer.set_data_dictionary(self.data_dictionary)
         self.assertEqual(dd_writer._sheets.keys(), [self.survey.get_name()])
         self.assertEqual(dd_writer._columns.keys(), [self.survey.get_name()])
-        self.assertEqual(dd_writer._columns[self.survey.get_name()], [u'name'])
-                         
+        self.assertEqual(dd_writer._columns[self.survey.get_name()], [u'name', u'_parent_index', u'_parent_table_name', u'_index'])
