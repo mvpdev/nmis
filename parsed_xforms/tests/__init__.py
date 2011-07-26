@@ -5,6 +5,7 @@ from reparse_everything import TestReparseEverything
 from map_view import TestMapView
 from survey_view import TestSurveyView
 from transportation.transportation_test import TestTransportationSurvey
+from zone_state_lga.test_lga_collapse import TestLgaCollapse
 
 # functional_tests have been replaced by map_view. Look in
 # functional_tests for an explanation of why these tests cannot be

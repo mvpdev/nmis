@@ -6,11 +6,11 @@ import common_tags
 
 
 def create_xform_and_data_dictionary(path_to_xls_file, id_string=None):
-    from pyxform import create_survey_from_xls
+    from pyxform.builder import create_survey_from_path
     from xform_manager.models import XForm
     import json
 
-    survey = create_survey_from_xls(path_to_xls_file)
+    survey = create_survey_from_path(path_to_xls_file)
     if id_string is not None:
         survey.set_id_string(id_string)
     xform = XForm.objects.create(xml=survey.to_xml())
