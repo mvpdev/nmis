@@ -75,14 +75,15 @@ class DataDictionary(models.Model):
             return e.get_label()
 
     def _remove_unwanted_keys(self, d):
-        # we will remove respondents 4 and above
-        def respondent_index_above_three(abbreviated_xpath):
-            m = re.search(r"^respondent\[(\d+)\]/", abbreviated_xpath)
+        # we will remove repeat iterations above 4
+        # TODO: This will mess up the xls export.
+        def repeat_above_four(abbreviated_xpath):
+            m = re.search(r"\[(\d+)\]", abbreviated_xpath)
             if m:
-                return int(m.group(1)) > 3
+                return int(m.group(1)) > 4
             return False
         for k in d.keys():
-            if respondent_index_above_three(k):
+            if repeat_above_four(k):
                 del d[k]
             e = self.get_element(k)
             if e is None:
