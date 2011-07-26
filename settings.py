@@ -93,12 +93,12 @@ INSTALLED_APPS = (
     'xform_manager',
     'map_xforms',
     'submission_qr',
-    
+
     #required for django-sentry
-    'indexer',
-    'paging',
-    'sentry',
-    'sentry.client',
+    # 'indexer',
+    # 'paging',
+    # 'sentry',
+    # 'sentry.client',
 )
 
 # SEARCH ENGINE settings

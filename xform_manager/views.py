@@ -11,6 +11,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Group
 from django.forms.models import ModelMultipleChoiceField
 from django.template import RequestContext
+from django.conf import settings
 
 import itertools
 from . models import XForm, get_or_create_instance, Instance
@@ -26,12 +27,11 @@ def formList(request, group_name):
         mimetype="application/xml"
         )
 
-try:
+# I want to set this code up to not rely on sentry as it breaks
+# testing.
+sentry_client = None
+if 'sentry' in settings.INSTALLED_APPS:
     from sentry.client.models import client as sentry_client
-except:
-    # I want to set this code up to not rely on sentry as it breaks
-    # testing.
-    sentry_client = None
 import logging
 
 def log_error(message, level=logging.ERROR):
