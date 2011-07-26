@@ -29,6 +29,11 @@ class DataDictionary(models.Model):
     def get_survey_elements(self):
         return self.get_survey_object().iter_children()
 
+    def _rename_state_or_lga_xpath(self, key):
+        m = re.search("^(location/)?(state|lga)_in_[^/]+$", key)
+        if m:
+            return m.group(2)
+
     def get_headers(self):
         """
         Return a list of headers for a csv file.
@@ -37,6 +42,13 @@ class DataDictionary(models.Model):
         for e in self.get_survey_elements():
             if isinstance(e, Section) or isinstance(e, Option):
                 continue
+
+            state_or_lga_key = self._rename_state_or_lga_xpath(
+                e.get_abbreviated_xpath()
+                )
+            if state_or_lga_key is not None:
+                if state_or_lga_key not in headers:
+                    headers.append(state_or_lga_key)
             elif e.get_bind().get(u"type") == u"select":
                 for child in e.get_children():
                     headers.append(child.get_abbreviated_xpath())
@@ -136,24 +148,11 @@ class DataDictionary(models.Model):
         return xform_instances.find(spec=match_id_string)
 
     def _rename_state_and_lga_keys(self, d):
-        def rename_key(is_key_to_rename, new_key):
-            candidates = [k for k in d.keys() if is_key_to_rename(k)]
-            for k in candidates:
-                if d[k] is None:
-                    del d[k]
-                    candidates.remove(k)
-            if len(candidates) > 1:
-                for k in candidates:
-                    del d[k]
-            elif len(candidates)==1:
+        for key, value in d.iteritems():
+            new_key = self._rename_state_or_lga_xpath(key)
+            if new_key is not None:
                 assert new_key not in d
-                d[new_key] = d[candidates[0]]
-                del d[candidates[0]]
-        renamer = {
-            u"state" : lambda x: x.startswith(u"location/state_in_"),
-            u"lga" : lambda x: x.startswith(u"location/lga_in_"),
-            }
-        for k, v in renamer.items(): rename_key(v, k)
+                d[new_key] = d.pop(key)
 
     def _expand_select_all_that_apply(self, d):
         for key in d.keys():

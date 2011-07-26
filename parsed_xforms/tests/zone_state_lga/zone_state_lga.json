@@ -1,0 +1,711 @@
+{
+    "name": "need_xml_tag", 
+    "type": "survey", 
+    "children": [
+        {
+            "name": "zone", 
+            "label": "Zone", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "north_central", 
+                    "label": "North-Central"
+                }, 
+                {
+                    "name": "northeast", 
+                    "label": "Northeast"
+                }, 
+                {
+                    "name": "south_south", 
+                    "label": "South-south"
+                }, 
+                {
+                    "name": "southwest", 
+                    "label": "Southwest"
+                }
+            ]
+        }, 
+        {
+            "name": "state_in_north_central", 
+            "bind": {
+                "relevant": "${zone}='north_central'"
+            }, 
+            "label": "State", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "benue", 
+                    "label": "Benue"
+                }, 
+                {
+                    "name": "fct", 
+                    "label": "FCT"
+                }, 
+                {
+                    "name": "kogi", 
+                    "label": "Kogi"
+                }, 
+                {
+                    "name": "kwara", 
+                    "label": "Kwara"
+                }, 
+                {
+                    "name": "nasarawa", 
+                    "label": "Nasarawa"
+                }, 
+                {
+                    "name": "niger", 
+                    "label": "Niger"
+                }, 
+                {
+                    "name": "plateau", 
+                    "label": "Plateau"
+                }
+            ]
+        }, 
+        {
+            "name": "state_in_northeast", 
+            "bind": {
+                "relevant": "${zone}='northeast'"
+            }, 
+            "label": "State", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "adamawa", 
+                    "label": "Adamawa"
+                }, 
+                {
+                    "name": "bauchi", 
+                    "label": "Bauchi"
+                }, 
+                {
+                    "name": "borno", 
+                    "label": "Borno"
+                }, 
+                {
+                    "name": "gombe", 
+                    "label": "Gombe"
+                }, 
+                {
+                    "name": "taraba", 
+                    "label": "Taraba"
+                }, 
+                {
+                    "name": "yobe", 
+                    "label": "Yobe"
+                }
+            ]
+        }, 
+        {
+            "name": "state_in_south_south", 
+            "bind": {
+                "relevant": "${zone}='south_south'"
+            }, 
+            "label": "State", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "akwa_ibom", 
+                    "label": "Akwa Ibom"
+                }, 
+                {
+                    "name": "bayelsa", 
+                    "label": "Bayelsa"
+                }, 
+                {
+                    "name": "cross_river", 
+                    "label": "Cross River"
+                }, 
+                {
+                    "name": "delta", 
+                    "label": "Delta"
+                }, 
+                {
+                    "name": "edo", 
+                    "label": "Edo"
+                }, 
+                {
+                    "name": "rivers", 
+                    "label": "Rivers"
+                }
+            ]
+        }, 
+        {
+            "name": "state_in_southwest", 
+            "bind": {
+                "relevant": "${zone}='southwest'"
+            }, 
+            "label": "State", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "ekiti", 
+                    "label": "Ekiti"
+                }, 
+                {
+                    "name": "lagos", 
+                    "label": "Lagos"
+                }, 
+                {
+                    "name": "ogun", 
+                    "label": "Ogun"
+                }, 
+                {
+                    "name": "ondo", 
+                    "label": "Ondo"
+                }, 
+                {
+                    "name": "osun", 
+                    "label": "Osun"
+                }, 
+                {
+                    "name": "oyo", 
+                    "label": "Oyo"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_adamawa", 
+            "bind": {
+                "relevant": "${state_in_northeast}='adamawa'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "larmurde", 
+                    "label": "Larmurde"
+                }, 
+                {
+                    "name": "michika", 
+                    "label": "Michika"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_akwa_ibom", 
+            "bind": {
+                "relevant": "${state_in_south_south}='akwa_ibom'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "mbo", 
+                    "label": "Mbo"
+                }, 
+                {
+                    "name": "nsit_ubuim", 
+                    "label": "Nsit-Ubuim"
+                }, 
+                {
+                    "name": "oruk_anam", 
+                    "label": "Oruk Anam"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_bauchi", 
+            "bind": {
+                "relevant": "${state_in_northeast}='bauchi'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "ganjuwa", 
+                    "label": "Ganjuwa"
+                }, 
+                {
+                    "name": "itas_gadau", 
+                    "label": "Itas/Gadau"
+                }, 
+                {
+                    "name": "kirfi", 
+                    "label": "Kirfi"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_bayelsa", 
+            "bind": {
+                "relevant": "${state_in_south_south}='bayelsa'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "brass", 
+                    "label": "Brass"
+                }, 
+                {
+                    "name": "sagbama", 
+                    "label": "Sagbama"
+                }, 
+                {
+                    "name": "southern_ijaw", 
+                    "label": "Southern Ijaw"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_benue", 
+            "bind": {
+                "relevant": "${state_in_north_central}='benue'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "ado", 
+                    "label": "Ado"
+                }, 
+                {
+                    "name": "gwer_west", 
+                    "label": "Gwer West"
+                }, 
+                {
+                    "name": "logo", 
+                    "label": "Logo"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_borno", 
+            "bind": {
+                "relevant": "${state_in_northeast}='borno'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "guzamala", 
+                    "label": "Guzamala"
+                }, 
+                {
+                    "name": "kala_balge", 
+                    "label": "Kala/Balge"
+                }, 
+                {
+                    "name": "shani", 
+                    "label": "Shani"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_cross_river", 
+            "bind": {
+                "relevant": "${state_in_south_south}='cross_river'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "boki", 
+                    "label": "Boki"
+                }, 
+                {
+                    "name": "odukpani", 
+                    "label": "Odukpani"
+                }, 
+                {
+                    "name": "yala", 
+                    "label": "Yala"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_delta", 
+            "bind": {
+                "relevant": "${state_in_south_south}='delta'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "ethiope_west", 
+                    "label": "Ethiope West"
+                }, 
+                {
+                    "name": "ukwuani", 
+                    "label": "Ukwuani"
+                }, 
+                {
+                    "name": "warri_south_west", 
+                    "label": "Warri South West"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_edo", 
+            "bind": {
+                "relevant": "${state_in_south_south}='edo'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "esan_south_east", 
+                    "label": "Esan South-East"
+                }, 
+                {
+                    "name": "etsako_west", 
+                    "label": "Etsako West"
+                }, 
+                {
+                    "name": "ohionmwon", 
+                    "label": "Ohionmwon"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_ekiti", 
+            "bind": {
+                "relevant": "${state_in_southwest}='ekiti'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "ekiti_east", 
+                    "label": "Ekiti East"
+                }, 
+                {
+                    "name": "ijero", 
+                    "label": "Ijero"
+                }, 
+                {
+                    "name": "ikole", 
+                    "label": "Ikole"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_fct", 
+            "bind": {
+                "relevant": "${state_in_north_central}='fct'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "abaji", 
+                    "label": "Abaji"
+                }, 
+                {
+                    "name": "bwari", 
+                    "label": "Bwari"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_gombe", 
+            "bind": {
+                "relevant": "${state_in_northeast}='gombe'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "akko", 
+                    "label": "Akko"
+                }, 
+                {
+                    "name": "balanga", 
+                    "label": "Balanga"
+                }, 
+                {
+                    "name": "dukku", 
+                    "label": "Dukku"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_kogi", 
+            "bind": {
+                "relevant": "${state_in_north_central}='kogi'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "ajaokuta", 
+                    "label": "Ajaokuta"
+                }, 
+                {
+                    "name": "kabba_bunu", 
+                    "label": "Kabba/Bunu"
+                }, 
+                {
+                    "name": "omala", 
+                    "label": "Omala"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_kwara", 
+            "bind": {
+                "relevant": "${state_in_north_central}='kwara'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "asa", 
+                    "label": "Asa"
+                }, 
+                {
+                    "name": "ifelodun", 
+                    "label": "Ifelodun"
+                }, 
+                {
+                    "name": "kaiama", 
+                    "label": "Kaiama"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_lagos", 
+            "bind": {
+                "relevant": "${state_in_southwest}='lagos'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "eti_osa", 
+                    "label": "Eti-osa"
+                }, 
+                {
+                    "name": "ibeju_lekki", 
+                    "label": "Ibeju/lekki"
+                }, 
+                {
+                    "name": "ikeja", 
+                    "label": "Ikeja"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_nasarawa", 
+            "bind": {
+                "relevant": "${state_in_north_central}='nasarawa'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "akwanga", 
+                    "label": "Akwanga"
+                }, 
+                {
+                    "name": "obi", 
+                    "label": "Obi"
+                }, 
+                {
+                    "name": "toto", 
+                    "label": "Toto"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_niger", 
+            "bind": {
+                "relevant": "${state_in_north_central}='niger'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "lavun", 
+                    "label": "Lavun"
+                }, 
+                {
+                    "name": "moya", 
+                    "label": "Moya"
+                }, 
+                {
+                    "name": "wushishi", 
+                    "label": "Wushishi"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_ogun", 
+            "bind": {
+                "relevant": "${state_in_southwest}='ogun'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "egbado_north", 
+                    "label": "Egbado North"
+                }, 
+                {
+                    "name": "ikenne", 
+                    "label": "Ikenne"
+                }, 
+                {
+                    "name": "odeda", 
+                    "label": "Odeda"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_ondo", 
+            "bind": {
+                "relevant": "${state_in_southwest}='ondo'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "akoko_north_east", 
+                    "label": "Akoko North East"
+                }, 
+                {
+                    "name": "ile_oluji_okeigbo", 
+                    "label": "Ile Oluji Okeigbo"
+                }, 
+                {
+                    "name": "ondo_east", 
+                    "label": "Ondo East"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_osun", 
+            "bind": {
+                "relevant": "${state_in_southwest}='osun'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "atakunmosa_east", 
+                    "label": "Atakunmosa East"
+                }, 
+                {
+                    "name": "ede_south", 
+                    "label": "Ede South"
+                }, 
+                {
+                    "name": "odo_otin", 
+                    "label": "Odo-otin"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_oyo", 
+            "bind": {
+                "relevant": "${state_in_southwest}='oyo'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "ibarapa_north", 
+                    "label": "Ibarapa North"
+                }, 
+                {
+                    "name": "lagelu", 
+                    "label": "Lagelu"
+                }, 
+                {
+                    "name": "oriire", 
+                    "label": "OriIre"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_plateau", 
+            "bind": {
+                "relevant": "${state_in_north_central}='plateau'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "kanke", 
+                    "label": "Kanke"
+                }, 
+                {
+                    "name": "mikang", 
+                    "label": "Mikang"
+                }, 
+                {
+                    "name": "riyom", 
+                    "label": "Riyom"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_rivers", 
+            "bind": {
+                "relevant": "${state_in_south_south}='rivers'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "akuku_toru", 
+                    "label": "Akuku Toru"
+                }, 
+                {
+                    "name": "khana", 
+                    "label": "Khana"
+                }, 
+                {
+                    "name": "omuma", 
+                    "label": "Omuma"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_taraba", 
+            "bind": {
+                "relevant": "${state_in_northeast}='taraba'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "bali", 
+                    "label": "Bali"
+                }, 
+                {
+                    "name": "karin_lamido", 
+                    "label": "Karin Lamido"
+                }, 
+                {
+                    "name": "takum", 
+                    "label": "Takum"
+                }
+            ]
+        }, 
+        {
+            "name": "lga_in_yobe", 
+            "bind": {
+                "relevant": "${state_in_northeast}='yobe'"
+            }, 
+            "label": "LGA", 
+            "type": "select one", 
+            "children": [
+                {
+                    "name": "fune", 
+                    "label": "Fune"
+                }, 
+                {
+                    "name": "karasuwa", 
+                    "label": "Karasuwa"
+                }, 
+                {
+                    "name": "yunusari", 
+                    "label": "Yunusari"
+                }
+            ]
+        }
+    ]
+}
