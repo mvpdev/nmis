@@ -90,17 +90,55 @@ class TestTransportationSurvey(TestCase):
                 self.assertEqual(actual_cell, expected_cell)
         f.close()
 
-        # TODO: Specify other questions should not be collapsed into a
-        # single column.
-
-        # TODO: Headers should be determined by the survey definition,
-        # not the data received.
-
     def test_data_dictionary_headers(self):
         l = list(self.xform.data_dictionary.all())
         self.assertTrue(len(l) == 1)
         dd = l[0]
         with open(os.path.join(self.test_path, "headers.json")) as f:
             expected_list = json.load(f)
-        self.maxDiff = None
         self.assertEqual(dd.get_headers(), expected_list)
+
+        f = open(os.path.join(self.test_path, "transportation.csv"), "r")
+        expected_csv = csv.reader(f)
+        first_row = expected_csv.next()
+        self.assertEqual(first_row, dd.get_headers())
+        f.close()
+
+    def test_csv_export2(self):
+        url = reverse(csv_export, kwargs={'id_string': self.id_string})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        actual_csv = response.content
+        actual_lines = actual_csv.split("\n")
+        actual_csv = csv.reader(actual_lines)
+        headers = actual_csv.next()
+        data = [
+            {
+                "available_transportation_types_to_referral_facility/ambulance": "True",
+                "available_transportation_types_to_referral_facility/bicycle": "True",
+                "ambulance/frequency_to_referral_facility": "daily",
+                "bicycle/frequency_to_referral_facility": "weekly"
+                },
+            {
+                "available_transportation_types_to_referral_facility/none": "True"
+                },
+            {
+                "available_transportation_types_to_referral_facility/ambulance": "True",
+                "ambulance/frequency_to_referral_facility": "weekly",
+                },
+            {
+                "available_transportation_types_to_referral_facility/taxi": "True",
+                "available_transportation_types_to_referral_facility/other": "True",
+                "available_transportation_types_to_referral_facility_other": "camel",
+                "taxi/frequency_to_referral_facility": "daily",
+                "other/frequency_to_referral_facility": "other",
+                }
+            ]
+
+        self.maxDiff = None
+        for row, expected_dict in zip(actual_csv, data):
+            d = dict(zip(headers, row))
+            for k, v in d.items():
+                if v in ["n/a", "False"]:
+                    del d[k]
+            self.assertEqual(d, dict([("transportation/" + k, v) for k, v in expected_dict.items()]))

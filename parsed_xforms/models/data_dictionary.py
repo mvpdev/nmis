@@ -2,6 +2,7 @@ import json
 from django.db import models
 from xform_manager.models import XForm
 from pyxform import QuestionTypeDictionary, SurveyElementBuilder, Section
+from pyxform.question import Option
 from common_tags import XFORM_ID_STRING, ID
 from parsed_xforms.models import xform_instances, ParsedInstance
 import re
@@ -34,9 +35,13 @@ class DataDictionary(models.Model):
         """
         headers = []
         for e in self.get_survey_elements():
-            if isinstance(e, Section):
+            if isinstance(e, Section) or isinstance(e, Option):
                 continue
-            headers.append(e.get_abbreviated_xpath())
+            elif e.get_bind().get(u"type") == u"select":
+                for child in e.get_children():
+                    headers.append(child.get_abbreviated_xpath())
+            else:
+                headers.append(e.get_abbreviated_xpath())
         return headers
 
     def get_element(self, abbreviated_xpath):
@@ -150,34 +155,16 @@ class DataDictionary(models.Model):
             }
         for k, v in renamer.items(): rename_key(v, k)
 
-    def _collapse_other_into_select_one(self, d):
-        candidates = [k for k in d.keys() if k.endswith(u"_other")]
-        for other_key in candidates:
-            root_key = other_key[:-len(u"_other")]
-            e = self.get_element(root_key)
-            if e.get_bind().get(u"type")==u"select1":
-                if d[root_key]==u"other":
-                    d[root_key] = d[other_key]
-                del d[other_key]
-
     def _expand_select_all_that_apply(self, d):
         for key in d.keys():
             e = self.get_element(key)
-            if e and e.get_bind().get(u"type")==u"select":
-                options_selected = None if d[key] is None else d[key].split()
+            if e and e.get_bind().get(u"type") == u"select":
+                options_selected = d[key].split()
                 for i, child in enumerate(e.get_children()):
-                    # this is a hack to get things ordered correctly
-                    # this needs to coordinate with the get variable
-                    # name method.
-                    new_key = key + u"[%s]" % i
-                    if options_selected is None:
-                        d[new_key] = u"n/a"
-                    elif child.get_name() in options_selected:
+                    new_key = child.get_abbreviated_xpath()
+                    if child.get_name() in options_selected:
                         assert new_key not in d
                         d[new_key] = True
-                        if child.get_name()==u"other":
-                            d[new_key] = d[key + u"_other"]
-                            del d[key + u"_other"]
                     else:
                         d[new_key] = False
                 del d[key]
@@ -193,8 +180,7 @@ class DataDictionary(models.Model):
             e = self.get_element(m.group(1))
             if e and e.get_bind().get(u"type")==u"select":
                 child = e.get_children()[int(m.group(2))]
-                return self._simple_get_variable_name(m.group(1)) + \
-                    u"_" + child.get_name()
+                return child.get_abbreviated_xpath()
         return None
 
     def _remove_index_from_first_instance_of_repeat(self, d):
