@@ -55,7 +55,13 @@ class DataDictionary(models.Model):
                     headers.append(child.get_abbreviated_xpath())
             else:
                 headers.append(e.get_abbreviated_xpath())
-        return headers
+        return headers + self._additional_headers()
+
+    def _additional_headers(self):
+        return ['_xform_id_string', '_surveyor_name', '_geo_id',
+                '_percentage_complete', '_status', '_id',
+                '_survey_type_slug', '_attachments', '_lga_id',
+                '_potential_duplicates']
 
     def get_element(self, abbreviated_xpath):
         if not hasattr(self, "_survey_elements"):
