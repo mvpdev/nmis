@@ -18,6 +18,14 @@ xform_db = settings.MONGO_DB
 xform_instances = xform_db.instances
 
 
+def require_debug_off(func):
+    def wrapper(*args, **kwargs):
+        assert not settings.DEBUG, "Debug must be switched off."
+        return func(*args, **kwargs)
+    return wrapper
+
+
+@require_debug_off
 def delete_all_parsed_instances():
     # ParsedInstance.objects.all().delete()
     # Ends up blowing memory, so I need to iterate through all the
@@ -56,6 +64,7 @@ def print_counts(func):
 
 
 @print_counts
+@require_debug_off
 def reparse_all():
     print "[Reparsing XForm Instances]\n"
 
