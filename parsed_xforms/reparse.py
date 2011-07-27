@@ -68,9 +68,13 @@ def print_counts(func):
 def reparse_all():
     print "[Reparsing XForm Instances]\n"
 
+    count = 0
     for i in queryset_iterator(Instance.objects.all()):
         try:
             i.save()
+            count += 1
+            if count % 1000 == 0:
+                print count
         except Exception as e:
             # There are a few instances that throw errors
             print e
