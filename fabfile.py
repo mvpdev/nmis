@@ -102,7 +102,8 @@ def deploy(deployment_name, reparse="all"):
 
     def reparse_surveys():
         with cd(env.code_path):
-            _run_in_virtualenv("python manage.py reparse")
+            _run_in_virtualenv("python manage.py reparse delete_all_parsed_instances")
+            _run_in_virtualenv("python manage.py reparse reparse_all")
     if reparse == "all":
         reparse_surveys()
 

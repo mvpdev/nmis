@@ -1,7 +1,8 @@
 import json
 from django.db import models
 from xform_manager.models import XForm
-from pyxform import QuestionTypeDictionary, SurveyElementBuilder, Section
+from pyxform import QuestionTypeDictionary, SurveyElementBuilder
+from pyxform.section import Section
 from pyxform.question import Option
 from common_tags import XFORM_ID_STRING, ID
 from parsed_xforms.models import xform_instances, ParsedInstance
@@ -34,10 +35,7 @@ class DataDictionary(models.Model):
         if m:
             return m.group(2)
 
-    def get_headers(self):
-        """
-        Return a list of headers for a csv file.
-        """
+    def xpaths(self):
         headers = []
         for e in self.get_survey_elements():
             if isinstance(e, Section) or isinstance(e, Option):
@@ -55,6 +53,18 @@ class DataDictionary(models.Model):
             else:
                 headers.append(e.get_abbreviated_xpath())
         return headers
+
+    def get_headers(self):
+        """
+        Return a list of headers for a csv file.
+        """
+        return self.xpaths() + self._additional_headers()
+
+    def _additional_headers(self):
+        return ['_xform_id_string', '_surveyor_name', '_geo_id',
+                '_percentage_complete', '_status', '_id',
+                '_survey_type_slug', '_attachments', '_lga_id',
+                '_potential_duplicates']
 
     def get_element(self, abbreviated_xpath):
         if not hasattr(self, "_survey_elements"):

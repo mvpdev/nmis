@@ -20,5 +20,15 @@
     "transportation/lorry/frequency_to_referral_facility", 
     "transportation/motorbike/frequency_to_referral_facility", 
     "transportation/taxi/frequency_to_referral_facility", 
-    "transportation/other/frequency_to_referral_facility"
+    "transportation/other/frequency_to_referral_facility",
+    "_xform_id_string",
+    "_surveyor_name",
+    "_geo_id",
+    "_percentage_complete",
+    "_status",
+    "_id",
+    "_survey_type_slug",
+    "_attachments",
+    "_lga_id",
+    "_potential_duplicates"
 ]

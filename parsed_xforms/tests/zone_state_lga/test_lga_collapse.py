@@ -30,7 +30,7 @@ class TestLgaCollapse(TestCase):
         self.assertTrue(len(l) == 1)
         dd = l[0]
         expected_list = ['zone', 'state', 'lga']
-        self.assertEqual(dd.get_headers(), expected_list)
+        self.assertEqual(dd.get_headers()[0:3], expected_list)
 
     def test_csv_export(self):
         url = reverse(csv_export, kwargs={'id_string': self.id_string})
