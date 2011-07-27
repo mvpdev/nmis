@@ -1,7 +1,8 @@
 import json
 from django.db import models
 from xform_manager.models import XForm
-from pyxform import QuestionTypeDictionary, SurveyElementBuilder, Section
+from pyxform import QuestionTypeDictionary, SurveyElementBuilder
+from pyxform.section import Section
 from pyxform.question import Option
 from common_tags import XFORM_ID_STRING, ID
 from parsed_xforms.models import xform_instances, ParsedInstance
