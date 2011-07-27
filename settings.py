@@ -34,7 +34,16 @@ if TESTING_MODE:
     MEDIA_ROOT  = os.path.join(PROJECT_ROOT, 'test_site_media/')
 else:
     MEDIA_ROOT  = os.path.join(PROJECT_ROOT, 'site_media/')
-    
+
+if TESTING_MODE:
+    # use a sqlite database because it's much faster for testing.
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'db.sqlite',
+            },
+        }
+
 
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 TIME_ZONE = 'America/Chicago'
