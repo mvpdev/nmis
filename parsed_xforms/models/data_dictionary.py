@@ -35,10 +35,7 @@ class DataDictionary(models.Model):
         if m:
             return m.group(2)
 
-    def get_headers(self):
-        """
-        Return a list of headers for a csv file.
-        """
+    def xpaths(self):
         headers = []
         for e in self.get_survey_elements():
             if isinstance(e, Section) or isinstance(e, Option):
@@ -55,7 +52,13 @@ class DataDictionary(models.Model):
                     headers.append(child.get_abbreviated_xpath())
             else:
                 headers.append(e.get_abbreviated_xpath())
-        return headers + self._additional_headers()
+        return headers
+
+    def get_headers(self):
+        """
+        Return a list of headers for a csv file.
+        """
+        return self.xpaths() + self._additional_headers()
 
     def _additional_headers(self):
         return ['_xform_id_string', '_surveyor_name', '_geo_id',

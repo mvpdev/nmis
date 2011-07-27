@@ -1,6 +1,6 @@
 from django.test import TestCase
 from parsed_xforms.models import create_xform_and_data_dictionary, \
-    xform_instances
+    xform_instances, DataDictionary
 from xform_manager.import_tools import import_instances_from_phone
 from xform_manager.models import XForm
 import os
@@ -76,13 +76,16 @@ class TestTransportationSurvey(TestCase):
             }
         self.assertEqual(instance.get_dict(), expected_dict)
 
-    def test_csv_export(self):
+    def _get_csv_(self):
         url = reverse(csv_export, kwargs={'id_string': self.id_string})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         actual_csv = response.content
         actual_lines = actual_csv.split("\n")
-        actual_csv = csv.reader(actual_lines)
+        return csv.reader(actual_lines)
+
+    def test_csv_export(self):
+        actual_csv = self._get_csv_()
         f = open(os.path.join(self.test_path, "transportation.csv"), "r")
         expected_csv = csv.reader(f)
         for actual_row, expected_row in zip(actual_csv, expected_csv):
@@ -91,18 +94,16 @@ class TestTransportationSurvey(TestCase):
         f.close()
 
     def test_data_dictionary_headers(self):
-        l = list(self.xform.data_dictionary.all())
-        self.assertTrue(len(l) == 1)
-        dd = l[0]
+        # test to make sure the data dictionary returns the expected headers
+        self.assertEqual(DataDictionary.objects.count(), 1)
+        dd = DataDictionary.objects.all()[0]
         with open(os.path.join(self.test_path, "headers.json")) as f:
             expected_list = json.load(f)
         self.assertEqual(dd.get_headers(), expected_list)
 
-        f = open(os.path.join(self.test_path, "transportation.csv"), "r")
-        expected_csv = csv.reader(f)
-        first_row = expected_csv.next()
-        self.assertEqual(first_row, dd.get_headers())
-        f.close()
+        # test to make sure the headers in the actual csv are as expected
+        actual_csv = self._get_csv_()
+        self.assertEqual(actual_csv.next(), expected_list)
 
     def test_csv_export2(self):
         url = reverse(csv_export, kwargs={'id_string': self.id_string})
@@ -135,10 +136,13 @@ class TestTransportationSurvey(TestCase):
                 }
             ]
 
+        l = list(self.xform.data_dictionary.all())
+        self.assertTrue(len(l) == 1)
+        dd = l[0]
         self.maxDiff = None
         for row, expected_dict in zip(actual_csv, data):
             d = dict(zip(headers, row))
             for k, v in d.items():
-                if v in ["n/a", "False"]:
+                if v in ["n/a", "False"] or k in dd._additional_headers():
                     del d[k]
             self.assertEqual(d, dict([("transportation/" + k, v) for k, v in expected_dict.items()]))
