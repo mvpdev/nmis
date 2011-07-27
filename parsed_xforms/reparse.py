@@ -10,14 +10,27 @@ from queryset_iterator import queryset_iterator
 from django.contrib.auth.models import User
 from django.conf import settings
 
+import time
+import math
+import gc
+
 xform_db = settings.MONGO_DB
 xform_instances = xform_db.instances
 
-import time, math
+
+def delete_all_parsed_instances():
+    # ParsedInstance.objects.all().delete()
+    # Ends up blowing memory, so I need to iterate through all the
+    # parsed instances and delete them.
+    while ParsedInstance.objects.count() > 0:
+        for pi in ParsedInstance.objects.all()[0:1000]:
+            pi.delete()
+
 
 def get_counts():
     cols = ['instances', 'parsed_instances', 'mongo_instances', \
-            'districts_assigned', 'districts_total', 'registrations', 'surveyors', 'users']
+            'districts_assigned', 'districts_total', 'registrations', \
+            'surveyors', 'users'] 
     counts = {
         'instances': Instance.objects.count(),
         'parsed_instances': ParsedInstance.objects.count(),
@@ -30,31 +43,28 @@ def get_counts():
     }
     return (cols, counts, time.clock())
 
-def reparse_all(*args, **kwargs):
-    debug = kwargs.get('debug', False)
-    
-    if debug:
-        print "[Reparsing XForm Instances]\n"
-        sim_reset = kwargs.get('reset', False)
-        if sim_reset:
-            print " --> %s" % reset_values.__doc__.strip()
-            reset_values()
-        
-        cols, counts_1, start_time = get_counts()
 
-    # Delete all parsed instances.
-    ParsedInstance.objects.all().delete()
-    for i in queryset_iterator(Instance.objects.all()):
-        # There are a few instances that throw errors
-        try:
-            ParsedInstance.objects.create(instance=i)
-        except Exception as e:
-            print e
-    
-    if debug:
+def print_counts(func):
+    def wrapper(*args, **kwargs):
+        cols, counts_1, start_time = get_counts()
+        result = func(*args, **kwargs)
         cols, counts_2, end_time = get_counts()
         print "That process took [%d ticks]" % math.floor(1000 * (end_time-start_time))
         display_counts_as_table(cols, [counts_1, counts_2])
+        return result
+    return wrapper
+
+
+@print_counts
+def reparse_all():
+    print "[Reparsing XForm Instances]\n"
+
+    for i in queryset_iterator(Instance.objects.all()):
+        try:
+            i.save()
+        except Exception as e:
+            # There are a few instances that throw errors
+            print e
 
 
 def display_counts_as_table(cols, list_of_dicts):
@@ -71,30 +81,3 @@ def display_counts_as_table(cols, list_of_dicts):
     print '-'.join(breaker)
     for starr in strs:
         print '|'.join(starr)
-
-#        strs[1].append(" %-18d " % cts_1[c])
-#        strs[2].append(" %-18d " % cts_2[c])
-#        strs[3].append("--------------------")
-    
-#    print '|'.join(strs[0])
-#    print '-'.join(strs[3])
-#    print '|'.join(strs[1])
-#    print '|'.join(strs[2])
-#    print "\n"
-    
-    
-def reset_values():
-    """
-    This function is meant to simulate what we want to acheive with i.delete(). Right now, it is resetting mongo_db, Deleting ParsedInstances, Deleting Surveyors.
-    """
-    try:
-        xform_db.instances.drop()
-    except Exception, e:
-        #i can't believe i'm doing this, but
-        # it seems to be the only way to get this to not fail
-        # every other time i run it.
-        xform_db.instances.drop()
-
-    ParsedInstance.objects.all().delete()
-    Surveyor.objects.all().delete()
-    return reset_stuff.__doc__.strip()
