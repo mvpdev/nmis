@@ -1,7 +1,7 @@
 import codecs
 import os
 import re
-
+import glob
 
 class CsvWriter(object):
     """
@@ -133,14 +133,21 @@ class DataDictionaryWriter(CsvWriter):
     def set_data_dictionary(self, data_dictionary):
         self._data_dictionary = data_dictionary
 
-        generator_function = data_dictionary.get_data_for_excel
-        self.set_generator_function(generator_function)
-
-        key_comparator = data_dictionary.get_column_key_cmp()
-        self.set_key_comparator(key_comparator)
-
         key_rename_function = data_dictionary.get_variable_name
         self.set_key_rename_function(key_rename_function)
+
+    def write_to_file(self, path):
+        self._ensure_directory_exists(path)
+        self._file_object = codecs.open(path, mode="w", encoding="utf-8")
+
+        headers = [self._key_rename_function(k) for k in self._data_dictionary.get_headers()]
+        self._write_row(headers)
+
+        for d in self._data_dictionary.get_data_for_excel():
+            # todo: figure out how to use csv.writer with unicode
+            self._write_row([d.get(k, u"n/a") for k in self._data_dictionary.get_headers()])
+
+        self._file_object.close()
 
     def set_from_id_string(self, id_string):
         dd = DataDictionary.objects.get(xform__id_string=id_string)
@@ -153,7 +160,7 @@ class DataDictionaryWriter(CsvWriter):
 
 
 # http://djangosnippets.org/snippets/365/
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseNotFound
 from django.core.servers.basehttp import FileWrapper
 
 
@@ -170,7 +177,7 @@ def send_file(path, content_type):
 
 
 from deny_if_unauthorized import deny_if_unauthorized
-
+from django.conf import settings
 
 @deny_if_unauthorized()
 def csv_export(request, id_string):
@@ -183,3 +190,86 @@ def csv_export(request, id_string):
     file_path = writer.get_default_file_path()
     writer.write_to_file(file_path)
     return send_file(path=file_path, content_type="application/csv")
+
+## Below is AD's attempt at pulling from cached CSV files.
+## uses "generate_cached_export" management command
+PATH_TO_CSV_CACHE_DIRECTORY = os.path.join(
+            settings.PROJECT_ROOT,
+            "parsed_xforms",
+            "csv_cache")
+
+@deny_if_unauthorized()
+def cached_csv_export(request, id_string, file_format):
+    """
+    this handles requests for an xform's downloadable CSV summary.
+
+    it checks to see if a cached version of the spreadsheet exists.
+       if it does, it returns it to the user.
+       if it does not, it creates it and returns it to the user.
+       *IF the cached file is out-of-date:
+            it spawns a subprocess to generate a new one
+    """
+    # 2 file formats acceptable at the moment-- csv and csv.gz
+    if file_format == "csv":
+        content_type = "application/csv"
+    elif file_format == "csv.gz":
+        content_type = "application/gzip"
+    else:
+        return HttpResponseNotFound("File format not found: %s" % file_format)
+    xform = XForm.objects.get(id_string=id_string)
+
+    # gets timestamp to see if cache is out of date. see "id_stamp_for_recent_survey_cache_file"
+    recent_survey_id_stamp = id_stamp_for_recent_survey_cache_file(xform)
+    if recent_survey_id_stamp is None:
+        return HttpResponseNotFound("No surveys to export for form: %s" % id_string)
+
+    cached_file_root = os.path.join(PATH_TO_CSV_CACHE_DIRECTORY, \
+                                            id_string, \
+                                            recent_survey_id_stamp)
+    cached_file_path = "%s.%s" % (cached_file_root, file_format)
+    try:
+        most_recent_cached_file_path = most_recent_cache(xform.id_string, file_format)
+    except NotGeneratedError, e:
+        from django.core.management import call_command
+        call_command('generate_cached_export', xform.id_string)
+        most_recent_cached_file_path = most_recent_cache(xform.id_string, file_format)
+    if cached_file_path == most_recent_cached_file_path:
+        return send_file(path=cached_file_path, content_type=content_type)
+    else:
+        #start a subprocess to generate a new one, because the current one is old.
+        import subprocess
+        subprocess.Popen(['python', 'manage.py', 'generate_cached_export', xform.id_string])
+        return send_file(path=most_recent_cached_file_path, content_type=content_type)
+
+
+class NotGeneratedError(Exception):
+    pass
+
+def most_recent_cache(xform_id_string, file_format):
+    """
+    glob.glob's the xform's cache dir to see if any cached versions
+    already exist.
+
+    returns the most recent one (by alphabetical order)
+     - or -
+    raises a custom exception if no cached versions exist.
+    """
+    cache_file_dir = os.path.join(PATH_TO_CSV_CACHE_DIRECTORY, xform_id_string)
+    if not os.path.exists(cache_file_dir):
+        raise NotGeneratedError()
+    file_matches = glob.glob(os.path.join(cache_file_dir, '*.%s' % file_format))
+    if len(file_matches) == 0:
+        raise NotGeneratedError()
+    file_matches.sort() #is this necessary?
+    return file_matches[-1]
+
+def id_stamp_for_recent_survey_cache_file(xform):
+    """
+    uses the xform's most recent survey to determine the timestamp
+    for the cached CSV file. (when this value changes, the CSV is out of date)
+    """
+    try:
+        most_recent_survey = xform.surveys.order_by('-date_created')[0]
+    except IndexError:
+        return None
+    return most_recent_survey.date_created.strftime("%Y_%m_%d_%H")

@@ -1,5 +1,6 @@
 from collections import defaultdict
-from pyxform import Section, Question
+from pyxform import Question
+from pyxform.section import Section
 from parsed_xforms.models import DataDictionary
 import os
 from xform_manager.xform_instance_parser import xform_instance_to_dict
