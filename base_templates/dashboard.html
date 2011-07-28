@@ -32,11 +32,10 @@
 				    {{ xform.time_of_last_submission }}
 				    {% endif %}
 				  </td>
-				  <td>
+				  <td style="padding: 8px;">
 				    {% if xform.submission_count %}
-				    <a href="{% url parsed_xforms.views.csv_export id_string=xform.id_string %}">csv</a>
-				    <a href="{% url parsed_xforms.views.cached_csv_export file_format='csv' id_string=xform.id_string %}" style="opacity:0.2">.</a>
-				    <a href="{% url parsed_xforms.views.cached_csv_export file_format='csv.gz' id_string=xform.id_string %}" style="opacity:0.2">[z]</a>
+					<a href="{% url parsed_xforms.views.cached_csv_export file_format='csv' id_string=xform.id_string  %}" style="display:block;cursor:pointer">[ csv ]</a>
+					<a href="{% url parsed_xforms.views.cached_csv_export file_format='csv.gz' id_string=xform.id_string %}" style="display:block;cursor:pointer">[ csv compressed ]</a>
 				    {% endif %}
 				  </td>
 				</tr>

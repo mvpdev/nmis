@@ -1,7 +1,7 @@
 import codecs
 import os
 import re
-
+import glob
 
 class CsvWriter(object):
     """
@@ -160,7 +160,7 @@ class DataDictionaryWriter(CsvWriter):
 
 
 # http://djangosnippets.org/snippets/365/
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseNotFound
 from django.core.servers.basehttp import FileWrapper
 
 
@@ -179,56 +179,6 @@ def send_file(path, content_type):
 from deny_if_unauthorized import deny_if_unauthorized
 from django.conf import settings
 
-PATH_TO_CSV_CACHE_DIRECTORY = os.path.join(
-            settings.PROJECT_ROOT,
-            "parsed_xforms",
-            "csv_cache")
-
-import gzip
-
-def _create_csv_for_xform(xform, cached_file_root):
-    try:
-        writer = DataDictionaryWriter()
-        writer.set_from_id_string(xform.id_string)
-    except DataDictionary.DoesNotExist:
-        writer = XFormWriter()
-        writer.set_from_id_string(xform.id_string)
-    writer.write_to_file("%s.csv" % cached_file_root)
-    #create a zip
-    with gzip.open("%s.csv.gz" % cached_file_root, 'wb') as outfile:
-        with open("%s.csv" % cached_file_root, 'r') as infile:
-            outfile.write(infile.read())
-
-def _file_path_for_xform_and_timestamp(xform, file_format):
-    id_string = xform.id_string
-    latest_survey = xform.surveys.order_by('-date_created')[0]
-    date_of_most_recent_submission = latest_survey.date_created
-    datestamp = date_of_most_recent_submission.strftime("%Y_%m_%d_%H")
-    id_stamp = "%s_%s" % (id_string, datestamp)
-    path_to_xform_directory = os.path.join(PATH_TO_CSV_CACHE_DIRECTORY, id_string)
-    if not os.path.exists(PATH_TO_CSV_CACHE_DIRECTORY):
-        os.mkdir(PATH_TO_CSV_CACHE_DIRECTORY)
-    if not os.path.exists(path_to_xform_directory):
-        os.mkdir(path_to_xform_directory)
-    cached_file_root = os.path.join(PATH_TO_CSV_CACHE_DIRECTORY, path_to_xform_directory, datestamp)
-    cached_file_path = "%s.%s" % (cached_file_root, file_format)
-    return (cached_file_root, cached_file_path)
-
-@deny_if_unauthorized()
-def create_cached_csv_export(request, id_string, file_format):
-    if not file_format in ["csv", "csv.gz"]:
-        raise Exception("File format not found: %s" % file_format)
-    xf = XForm.objects.get(id_string=id_string)
-    # cached_file_root is the path to the cached file (w/o the extension)
-    cached_file_root, cached_file_path = _file_path_for_xform_and_timestamp(xf, file_format)
-    if not os.path.exists(cached_file_path):
-        _create_csv_for_xform(xf, cached_file_root)
-    if file_format == "csv":
-        content_type = "application/csv"
-    elif file_format == "csv.gz":
-        content_type = "application/gzip"
-    return send_file(path=cached_file_path, content_type=content_type)
-
 @deny_if_unauthorized()
 def csv_export(request, id_string):
     try:
@@ -240,3 +190,86 @@ def csv_export(request, id_string):
     file_path = writer.get_default_file_path()
     writer.write_to_file(file_path)
     return send_file(path=file_path, content_type="application/csv")
+
+## Below is AD's attempt at pulling from cached CSV files.
+## uses "generate_cached_export" management command
+PATH_TO_CSV_CACHE_DIRECTORY = os.path.join(
+            settings.PROJECT_ROOT,
+            "parsed_xforms",
+            "csv_cache")
+
+@deny_if_unauthorized()
+def cached_csv_export(request, id_string, file_format):
+    """
+    this handles requests for an xform's downloadable CSV summary.
+
+    it checks to see if a cached version of the spreadsheet exists.
+       if it does, it returns it to the user.
+       if it does not, it creates it and returns it to the user.
+       *IF the cached file is out-of-date:
+            it spawns a subprocess to generate a new one
+    """
+    # 2 file formats acceptable at the moment-- csv and csv.gz
+    if file_format == "csv":
+        content_type = "application/csv"
+    elif file_format == "csv.gz":
+        content_type = "application/gzip"
+    else:
+        return HttpResponseNotFound("File format not found: %s" % file_format)
+    xform = XForm.objects.get(id_string=id_string)
+
+    # gets timestamp to see if cache is out of date. see "id_stamp_for_recent_survey_cache_file"
+    recent_survey_id_stamp = id_stamp_for_recent_survey_cache_file(xform)
+    if recent_survey_id_stamp is None:
+        return HttpResponseNotFound("No surveys to export for form: %s" % id_string)
+
+    cached_file_root = os.path.join(PATH_TO_CSV_CACHE_DIRECTORY, \
+                                            id_string, \
+                                            recent_survey_id_stamp)
+    cached_file_path = "%s.%s" % (cached_file_root, file_format)
+    try:
+        most_recent_cached_file_path = most_recent_cache(xform.id_string, file_format)
+    except NotGeneratedError, e:
+        from django.core.management import call_command
+        call_command('generate_cached_export', xform.id_string)
+        most_recent_cached_file_path = most_recent_cache(xform.id_string, file_format)
+    if cached_file_path == most_recent_cached_file_path:
+        return send_file(path=cached_file_path, content_type=content_type)
+    else:
+        #start a subprocess to generate a new one, because the current one is old.
+        import subprocess
+        subprocess.Popen(['python', 'manage.py', 'generate_cached_export', xform.id_string])
+        return send_file(path=most_recent_cached_file_path, content_type=content_type)
+
+
+class NotGeneratedError(Exception):
+    pass
+
+def most_recent_cache(xform_id_string, file_format):
+    """
+    glob.glob's the xform's cache dir to see if any cached versions
+    already exist.
+
+    returns the most recent one (by alphabetical order)
+     - or -
+    raises a custom exception if no cached versions exist.
+    """
+    cache_file_dir = os.path.join(PATH_TO_CSV_CACHE_DIRECTORY, xform_id_string)
+    if not os.path.exists(cache_file_dir):
+        raise NotGeneratedError()
+    file_matches = glob.glob(os.path.join(cache_file_dir, '*.%s' % file_format))
+    if len(file_matches) == 0:
+        raise NotGeneratedError()
+    file_matches.sort() #is this necessary?
+    return file_matches[-1]
+
+def id_stamp_for_recent_survey_cache_file(xform):
+    """
+    uses the xform's most recent survey to determine the timestamp
+    for the cached CSV file. (when this value changes, the CSV is out of date)
+    """
+    try:
+        most_recent_survey = xform.surveys.order_by('-date_created')[0]
+    except IndexError:
+        return None
+    return most_recent_survey.date_created.strftime("%Y_%m_%d_%H")
