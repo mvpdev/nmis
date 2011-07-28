@@ -82,9 +82,10 @@ class Command(BaseCommand):
         writer.write_to_file("%s.csv" % cached_file_root)
 
         # storing a gzipped version of the csv
-        with gzip.open("%s.csv.gz" % cached_file_root, 'wb') as outfile:
-            with open("%s.csv" % cached_file_root, 'r') as infile:
-                outfile.write(infile.read())
+        outfile = gzip.open("%s.csv.gz" % cached_file_root, 'wb')
+        with open("%s.csv" % cached_file_root, 'r') as infile:
+            outfile.write(infile.read())
+        outfile.close()
 
         # removing stale cache dir if it exists, replacing with new one
         if os.path.exists(xform_dir):
