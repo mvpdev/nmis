@@ -11,6 +11,7 @@ from parsed_xforms.models import DataDictionary
 from parsed_xforms.views.csv_export import DataDictionaryWriter, XFormWriter, \
                 id_stamp_for_recent_survey_cache_file
 
+CACHE_DIRECTORY = os.path.join(settings.PROJECT_ROOT, 'parsed_xforms', 'csv_cache')
 
 class Command(BaseCommand):
     help = "Generate one or many csv caches for downloadable files."
@@ -41,8 +42,9 @@ class Command(BaseCommand):
                 self.generate_for_xform(**kwargs)
             except XForm.DoesNotExist:
                 continue
-
-    CACHE_DIRECTORY = os.path.join(settings.PROJECT_ROOT, 'parsed_xforms', 'csv_cache')
+            except Exception, e:
+                xform = XForm.objects.get(id_string=arg)
+                write_error_to_csv_file(xform, e)
 
     def generate_for_xform(self, **kwargs):
         id_string = kwargs.get('xform_id_string')
@@ -50,13 +52,13 @@ class Command(BaseCommand):
 
         # When writing files that are simultaneously served,
         # we need to write to a temporary directory and move stuff once it's done
-        xform_dir = os.path.join(self.CACHE_DIRECTORY, id_string)
-        xform_dir_new = os.path.join(self.CACHE_DIRECTORY, '.%s' % id_string)
-        xform_dir_stale = os.path.join(self.CACHE_DIRECTORY, '.STALE_%s' % id_string)
+        xform_dir = os.path.join(CACHE_DIRECTORY, id_string)
+        xform_dir_new = os.path.join(CACHE_DIRECTORY, '.%s' % id_string)
+        xform_dir_stale = os.path.join(CACHE_DIRECTORY, '.STALE_%s' % id_string)
 
         # creating cache directories if they do not exist
-        if not os.path.exists(self.CACHE_DIRECTORY):
-            os.mkdir(self.CACHE_DIRECTORY)
+        if not os.path.exists(CACHE_DIRECTORY):
+            os.mkdir(CACHE_DIRECTORY)
         if not os.path.exists(xform_dir_new):
             os.mkdir(xform_dir_new)
 
@@ -95,3 +97,16 @@ class Command(BaseCommand):
         else:
             os.rename(xform_dir_new, xform_dir)
 
+def write_error_to_csv_file(xform, error):
+    """
+    A slightly better option than logging the error.
+    """
+    id_stamp = id_stamp_for_recent_survey_cache_file(xform)
+    if id_stamp is None:
+        return
+    if not os.path.exists(CACHE_DIRECTORY):
+        os.mkdir(CACHE_DIRECTORY)
+    xform_dir = os.path.join(CACHE_DIRECTORY, xform.id_string)
+    csv_destination = os.path.join(xform_dir_new, "%s-error.csv" % id_stamp)
+    with open(csv_destination, 'w') as f:
+        f.write(error)
