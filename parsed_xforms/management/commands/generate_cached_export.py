@@ -107,6 +107,6 @@ def write_error_to_csv_file(xform, error):
     if not os.path.exists(CACHE_DIRECTORY):
         os.mkdir(CACHE_DIRECTORY)
     xform_dir = os.path.join(CACHE_DIRECTORY, xform.id_string)
-    csv_destination = os.path.join(xform_dir_new, "%s-error.csv" % id_stamp)
+    csv_destination = os.path.join(xform_dir, "%s-error.csv" % id_stamp)
     with open(csv_destination, 'w') as f:
         f.write(error)
