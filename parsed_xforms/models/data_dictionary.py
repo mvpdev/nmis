@@ -162,7 +162,7 @@ class DataDictionary(models.Model):
         for key, value in d.iteritems():
             new_key = self._rename_state_or_lga_xpath(key)
             if new_key is not None:
-                assert new_key not in d
+                assert new_key not in d, d
                 d[new_key] = d.pop(key)
 
     def _expand_select_all_that_apply(self, d):
