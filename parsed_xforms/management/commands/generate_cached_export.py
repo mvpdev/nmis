@@ -42,9 +42,9 @@ class Command(BaseCommand):
                 self.generate_for_xform(**kwargs)
             except XForm.DoesNotExist:
                 continue
-            except Exception, e:
+            except Exception as error:
                 xform = XForm.objects.get(id_string=arg)
-                write_error_to_csv_file(xform, e)
+                write_error_to_csv_file(xform, str(error))
 
     def generate_for_xform(self, **kwargs):
         id_string = kwargs.get('xform_id_string')
