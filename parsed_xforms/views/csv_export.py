@@ -184,32 +184,50 @@ PATH_TO_CSV_CACHE_DIRECTORY = os.path.join(
             "parsed_xforms",
             "csv_cache")
 
-def _create_csv_for_xform(xform, cached_file_path):
+import gzip
+
+def _create_csv_for_xform(xform, cached_file_root):
     try:
         writer = DataDictionaryWriter()
         writer.set_from_id_string(xform.id_string)
     except DataDictionary.DoesNotExist:
         writer = XFormWriter()
         writer.set_from_id_string(xform.id_string)
-    writer.write_to_file(cached_file_path)
+    writer.write_to_file("%s.csv" % cached_file_root)
+    #create a zip
+    with gzip.open("%s.csv.gz" % cached_file_root, 'wb') as outfile:
+        with open("%s.csv" % cached_file_root, 'r') as infile:
+            outfile.write(infile.read())
 
-def _file_path_for_xform_and_timestamp(xform, date_of_most_recent_submission):
+def _file_path_for_xform_and_timestamp(xform, file_format):
     id_string = xform.id_string
-    datestamp = date_of_most_recent_submission.strftime("%Y_%m_%d_%H_%M")
+    latest_survey = xform.surveys.order_by('-date_created')[0]
+    date_of_most_recent_submission = latest_survey.date_created
+    datestamp = date_of_most_recent_submission.strftime("%Y_%m_%d_%H")
     id_stamp = "%s_%s" % (id_string, datestamp)
+    path_to_xform_directory = os.path.join(PATH_TO_CSV_CACHE_DIRECTORY, id_string)
     if not os.path.exists(PATH_TO_CSV_CACHE_DIRECTORY):
         os.mkdir(PATH_TO_CSV_CACHE_DIRECTORY)
-    cached_file_path = os.path.join(PATH_TO_CSV_CACHE_DIRECTORY, "%s.csv" % id_stamp)
-    return cached_file_path
+    if not os.path.exists(path_to_xform_directory):
+        os.mkdir(path_to_xform_directory)
+    cached_file_root = os.path.join(PATH_TO_CSV_CACHE_DIRECTORY, path_to_xform_directory, datestamp)
+    cached_file_path = "%s.%s" % (cached_file_root, file_format)
+    return (cached_file_root, cached_file_path)
 
 @deny_if_unauthorized()
-def cached_csv_export(request, id_string):
+def create_cached_csv_export(request, id_string, file_format):
+    if not file_format in ["csv", "csv.gz"]:
+        raise Exception("File format not found: %s" % file_format)
     xf = XForm.objects.get(id_string=id_string)
-    latest_survey = xf.surveys.order_by('-date_created')[0]
-    cached_file_path = _file_path_for_xform_and_timestamp(xf, latest_survey.date_created)
+    # cached_file_root is the path to the cached file (w/o the extension)
+    cached_file_root, cached_file_path = _file_path_for_xform_and_timestamp(xf, file_format)
     if not os.path.exists(cached_file_path):
-        _create_csv_for_xform(xf, cached_file_path)
-    return send_file(path=cached_file_path, content_type="application/csv")
+        _create_csv_for_xform(xf, cached_file_root)
+    if file_format == "csv":
+        content_type = "application/csv"
+    elif file_format == "csv.gz":
+        content_type = "application/gzip"
+    return send_file(path=cached_file_path, content_type=content_type)
 
 @deny_if_unauthorized()
 def csv_export(request, id_string):
