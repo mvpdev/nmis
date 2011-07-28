@@ -208,7 +208,7 @@ def cached_csv_export(request, id_string):
     latest_survey = xf.surveys.order_by('-date_created')[0]
     cached_file_path = _file_path_for_xform_and_timestamp(xf, latest_survey.date_created)
     if not os.path.exists(cached_file_path):
-        _create_csv_for_xform(xform, cached_file_path)
+        _create_csv_for_xform(xf, cached_file_path)
     return send_file(path=cached_file_path, content_type="application/csv")
 
 @deny_if_unauthorized()
