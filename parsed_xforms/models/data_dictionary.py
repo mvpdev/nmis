@@ -30,18 +30,13 @@ class DataDictionary(models.Model):
     def get_survey_elements(self):
         return self.get_survey_object().iter_children()
 
-    def _rename_state_or_lga_xpath(self, key):
-        m = re.search("^(location/)?(state|lga)_in_[^/]+$", key)
-        if m:
-            return m.group(2)
-
     def xpaths(self):
         headers = []
         for e in self.get_survey_elements():
             if isinstance(e, Section) or isinstance(e, Option):
                 continue
 
-            state_or_lga_key = self._rename_state_or_lga_xpath(
+            state_or_lga_key = self._rename_zone_state_lga_xpath(
                 e.get_abbreviated_xpath()
                 )
             if state_or_lga_key is not None:
@@ -158,12 +153,37 @@ class DataDictionary(models.Model):
         match_id_string = {XFORM_ID_STRING : id_string}
         return xform_instances.find(spec=match_id_string)
 
+    def _rename_zone_state_lga_xpath(self, key):
+        if key == u"location/zone":
+            return u"zone"
+        m = re.search("^(location/)?(state|lga)_in_[^/]+$", key)
+        if m:
+            return m.group(2)
+
+    def _rename_key(self, d, old_key, new_key):
+        assert new_key not in d, d
+        d[new_key] = d[old_key]
+        del d[old_key]
+
+    def _rename_zone(self, d):
+        self._location_prefix = u"" if u"zone" in d else u"location/"
+        if u"location/zone" in d:
+            self._rename_key(d, u"location/zone", u"zone")
+
+    def _rename_state(self, d):
+        state_key = self._location_prefix + u"state_in_" + d.get(u"zone", u"")
+        if state_key in d:
+            self._rename_key(d, state_key, u"state")
+
+    def _rename_lga(self, d):
+        lga_key = self._location_prefix + u"lga_in_" + d.get(u"state", u"")
+        if lga_key in d:
+            self._rename_key(d, lga_key, u"lga")
+
     def _rename_state_and_lga_keys(self, d):
-        for key, value in d.iteritems():
-            new_key = self._rename_state_or_lga_xpath(key)
-            if new_key is not None:
-                assert new_key not in d, d
-                d[new_key] = d.pop(key)
+        self._rename_zone(d)
+        self._rename_state(d)
+        self._rename_lga(d)
 
     def _expand_select_all_that_apply(self, d):
         for key in d.keys():
