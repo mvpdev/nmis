@@ -34,7 +34,8 @@
 				  </td>
 				  <td>
 				    {% if xform.submission_count %}
-				    <a href={% url parsed_xforms.views.csv_export id_string=xform.id_string %}>csv</a>
+				    <a href="{% url parsed_xforms.views.csv_export id_string=xform.id_string %}">csv</a>
+				    <a href="{% url parsed_xforms.views.cached_csv_export id_string=xform.id_string %}" style="opacity:0.2">.</a>
 				    {% endif %}
 				  </td>
 				</tr>
@@ -43,8 +44,6 @@
 			</table>
 		</div>
 	</div>
-	<style type="text/css">
-	</style>
 	<div class="iwrap" id="lga-list">
 		<div class="iiwrap">
 			<div class='pretty-table-wrap'>

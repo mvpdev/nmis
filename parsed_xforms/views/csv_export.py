@@ -177,7 +177,39 @@ def send_file(path, content_type):
 
 
 from deny_if_unauthorized import deny_if_unauthorized
+from django.conf import settings
 
+PATH_TO_CSV_CACHE_DIRECTORY = os.path.join(
+            settings.PROJECT_ROOT,
+            "parsed_xforms",
+            "csv_cache")
+
+def _create_csv_for_xform(xform, cached_file_path):
+    try:
+        writer = DataDictionaryWriter()
+        writer.set_from_id_string(xform.id_string)
+    except DataDictionary.DoesNotExist:
+        writer = XFormWriter()
+        writer.set_from_id_string(xform.id_string)
+    writer.write_to_file(cached_file_path)
+
+def _file_path_for_xform_and_timestamp(xform, date_of_most_recent_submission):
+    id_string = xform.id_string
+    datestamp = date_of_most_recent_submission.strftime("%Y_%m_%d_%H_%M")
+    id_stamp = "%s_%s" % (id_string, datestamp)
+    if not os.path.exists(PATH_TO_CSV_CACHE_DIRECTORY):
+        os.mkdir(PATH_TO_CSV_CACHE_DIRECTORY)
+    cached_file_path = os.path.join(PATH_TO_CSV_CACHE_DIRECTORY, "%s.csv" % id_stamp)
+    return cached_file_path
+
+@deny_if_unauthorized()
+def cached_csv_export(request, id_string):
+    xf = XForm.objects.get(id_string=id_string)
+    latest_survey = xf.surveys.order_by('-date_created')[0]
+    cached_file_path = _file_path_for_xform_and_timestamp(xf, latest_survey.date_created)
+    if not os.path.exists(cached_file_path):
+        _create_csv_for_xform(xform, cached_file_path)
+    return send_file(path=cached_file_path, content_type="application/csv")
 
 @deny_if_unauthorized()
 def csv_export(request, id_string):
