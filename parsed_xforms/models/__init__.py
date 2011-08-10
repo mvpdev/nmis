@@ -1,6 +1,6 @@
 from parsed_instance import xform_instances, ParsedInstance
 from registration import Registration
-from data_dictionary import DataDictionary
+from data_dictionary import DataDictionary, ColumnRename
 from instance_modification import InstanceModification
 import common_tags
 
