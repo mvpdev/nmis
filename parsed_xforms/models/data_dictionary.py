@@ -9,10 +9,18 @@ from parsed_xforms.models import xform_instances, ParsedInstance
 import re
 
 
+# class ColumnRename(models.Model):
+#     xpath = models.CharField(max_length=256, unique=True)
+#     column_name = models.CharField(max_length=32)
+
+#     @classmethod
+#     def get_dict(cls):
+#         return dict([(cr.xpath, cr.column_name) for cr in cls.objects.all()])
+
+
 class DataDictionary(models.Model):
     xform = models.ForeignKey(XForm, related_name="data_dictionary")
     json = models.TextField()
-    variable_names_json = models.TextField(default=u"{}")
 
     class Meta:
         app_label = "parsed_xforms"
