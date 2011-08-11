@@ -30,6 +30,8 @@ def delete_all_parsed_instances():
     # ParsedInstance.objects.all().delete()
     # Ends up blowing memory, so I need to iterate through all the
     # parsed instances and delete them.
+    xform_instances.drop()
+
     while ParsedInstance.objects.count() > 0:
         for pi in ParsedInstance.objects.all()[0:1000]:
             pi.delete()
@@ -66,6 +68,9 @@ def print_counts(func):
 @print_counts
 @require_debug_off
 def reparse_all():
+    print "[Deleting all Parsed Instances]\n"
+    delete_all_parsed_instances()
+
     print "[Reparsing XForm Instances]\n"
 
     count = 0
