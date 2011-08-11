@@ -1,4 +1,3 @@
-import json
 from django.db import models
 from xform_manager.models import XForm
 from pyxform import QuestionTypeDictionary, SurveyElementBuilder
@@ -9,10 +8,21 @@ from parsed_xforms.models import xform_instances, ParsedInstance
 import re
 
 
+class ColumnRename(models.Model):
+    xpath = models.CharField(max_length=256, unique=True)
+    column_name = models.CharField(max_length=32)
+
+    class Meta:
+        app_label = "parsed_xforms"
+
+    @classmethod
+    def get_dict(cls):
+        return dict([(cr.xpath, cr.column_name) for cr in cls.objects.all()])
+
+
 class DataDictionary(models.Model):
     xform = models.ForeignKey(XForm, related_name="data_dictionary")
     json = models.TextField()
-    variable_names_json = models.TextField(default=u"{}")
 
     class Meta:
         app_label = "parsed_xforms"
@@ -136,7 +146,7 @@ class DataDictionary(models.Model):
         return the original abbreviated_xpath.
         """
         if not hasattr(self, "_variable_names"):
-            self._variable_names = json.loads(self.variable_names_json)
+            self._variable_names = ColumnRename.get_dict()
             assert type(self._variable_names) == dict
         if abbreviated_xpath in self._variable_names and \
                 self._variable_names[abbreviated_xpath]:

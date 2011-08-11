@@ -13,6 +13,7 @@ from parsed_xforms.views.csv_export import DataDictionaryWriter, XFormWriter, \
 
 CACHE_DIRECTORY = os.path.join(settings.PROJECT_ROOT, 'parsed_xforms', 'csv_cache')
 
+
 class Command(BaseCommand):
     help = "Generate one or many csv caches for downloadable files."
 
@@ -36,15 +37,9 @@ class Command(BaseCommand):
             return
         assert len(args) > 0
         for arg in args:
-            try:
-                id_string = XForm.objects.get(id_string=arg).id_string
-                kwargs['xform_id_string'] = id_string
-                self.generate_for_xform(**kwargs)
-            except XForm.DoesNotExist:
-                continue
-            except Exception as error:
-                xform = XForm.objects.get(id_string=arg)
-                write_error_to_csv_file(xform, str(error))
+            id_string = XForm.objects.get(id_string=arg).id_string
+            kwargs['xform_id_string'] = id_string
+            self.generate_for_xform(**kwargs)
 
     def generate_for_xform(self, **kwargs):
         id_string = kwargs.get('xform_id_string')
