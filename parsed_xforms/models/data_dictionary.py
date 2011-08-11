@@ -9,7 +9,7 @@ import re
 
 
 class ColumnRename(models.Model):
-    xpath = models.CharField(max_length=256, unique=True)
+    xpath = models.CharField(max_length=255, unique=True)
     column_name = models.CharField(max_length=32)
 
     class Meta:
