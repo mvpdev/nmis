@@ -4,10 +4,11 @@ from .models.data_dictionary import DataDictionary, ColumnRename
 
 
 class ColumnRenameAdmin(admin.ModelAdmin):
-    list_display = ('id', 'xpath', 'column_name')
+    list_display = ('xpath', 'column_name')
     search_fields = ('xpath', 'column_name')
-    list_editable = ('xpath', 'column_name')
+    list_editable = ('column_name',)
     actions = ['generate_csv_files']
+    list_per_page = 10
 
     def __init__(self, *args, **kwargs):
         # http://stackoverflow.com/questions/1618728/disable-link-to-edit-object-in-djangos-admin-display-list-only
