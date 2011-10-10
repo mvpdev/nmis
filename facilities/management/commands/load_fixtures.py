@@ -31,6 +31,11 @@ class Command(BaseCommand):
                     dest="spawn_subprocess",
                     default=False,
                     action="store_true"),
+        make_option("-k", "--kill_db",
+                    dest="kill_db",
+                    help="Whether or not to delete the database before the import (default is False).",
+                    default=False,
+                    action="store_true"),
         )
 
     def handle(self, *args, **kwargs):

@@ -1,11 +1,13 @@
 from django.core.management import call_command
 from django.db.models import Count
+from django.db.utils import DatabaseError
 import os
 import json
 from collections import defaultdict
 from facilities.models import Facility, Variable, CalculatedVariable, \
     KeyRename, FacilityRecord, Sector, FacilityType, PartitionVariable, \
     LGAIndicator, GapVariable
+from display_defs.models import FacilityTable, TableColumn, ColumnCategory, MapLayerDescription
 from nga_districts.models import LGA, LGARecord
 from facilities.facility_builder import FacilityBuilder
 from utils.csv_reader import CsvReader
@@ -21,6 +23,7 @@ class DataLoader(object):
     def __init__(self, **kwargs):
         self._debug = kwargs.get('debug', False)
         self._data_dir = kwargs.get('data_dir', 'data')
+        self._kill_db = kwargs.get('kill_db', False)
         self._load_config_file()
 
     def _load_config_file(self):
@@ -76,7 +79,10 @@ PS. some exception data: %s""" % (str(lga.id), str(e)))
 
     @print_time
     def reset_database(self):
-        self._drop_database()
+        if self._kill_db:
+            self._drop_database()
+        else:
+            self._drop_data()
         call_command('syncdb', interactive=False)
         call_command('migrate')
 
@@ -418,6 +424,23 @@ PS. some exception data: %s""" % (str(lga.id), str(e)))
     @print_time
     def print_stats(self):
         print json.dumps(self.get_info(), indent=4)
+
+    def _drop_data(self):
+        classes_with_data_to_drop = [
+            Facility,
+            FacilityRecord,
+            LGARecord,
+            FacilityTable,
+            TableColumn,
+            ColumnCategory,
+            MapLayerDescription,
+        ]
+        for c in classes_with_data_to_drop:
+            try:
+                # this will fail if the table doesn't exist (first import)
+                c.objects.all().delete()
+            except DatabaseError:
+                print "No data deleted for %s" % c
 
     def _drop_database(self):
         db_host = settings.DATABASES['default']['HOST'] or 'localhost'
