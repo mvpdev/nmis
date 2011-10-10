@@ -30,7 +30,11 @@
 					{{indicator.0}}
 				</td>
 				<td class="indvalue bb">
-					{{indicator.1|safe}}{% if indicator.2 != None %}&nbsp;({{indicator.2|safe}}){% endif %}
+                    {% if indicator.1 == None %}
+                        N/A
+                    {% else %}
+					    {{indicator.1|safe}}{% if indicator.2 != None %}&nbsp;({{indicator.2|safe}}){% endif %}
+                    {% endif %}
 				</td>
 				<td class="indvalue bb target" style="display:none">
 					{{indicator.3|safe}}{% if indicator.4 != None %}&nbsp;({{indicator.4|safe}}){% endif %}

@@ -12,7 +12,11 @@
                         {{key}}
                     </td>
                     <td class='value'>
+                    {% if value == None or value.value == None %}
+                        N/A
+                    {% else %}
                         {{value.value}}
+                    {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -45,7 +49,11 @@
 					{{indicator.0}}
 				</td>
 				<td class="data">
-					{{indicator.1}}
+                    {% if indicator == None or indicator.1 == None %}
+                        N/A
+                    {% else %}
+                        {{indicator.1}}
+                    {% endif %}
 				</td>
 			</tr>
 			{% endfor %}

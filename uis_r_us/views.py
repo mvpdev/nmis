@@ -386,6 +386,8 @@ def tmp_variables_for_sector(sector_slug, lga):
         else:
             return None
     def h(slug1, slug2):
+        if g(slug1) == None or g(slug2) == None:
+            return None
         return "%s/%s" % (g(slug1), g(slug2))
     example = {
         'health': [
