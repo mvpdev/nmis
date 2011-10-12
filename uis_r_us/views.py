@@ -218,7 +218,11 @@ def test_map(request):
     return render_to_response("test_map.html")
 
 def temp_facility_buildr(lga):
-    lga_data = lga.get_latest_data(for_display=True)
+    lga_data = lga.get_latest_data(for_display=True, \
+        display_options={
+            'num_skilled_health_providers_per_1000': {'decimal_places': 3},
+            'num_chews_per_1000': {'decimal_places': 3},
+        })
     def g(slug):
         value_dict = lga_data.get(slug, None)
         if value_dict:
@@ -380,7 +384,12 @@ def new_dashboard(request, lga_id):
     return render_to_response("new_dashboard.html", context_instance=context)
 
 def tmp_variables_for_sector(sector_slug, lga):
-    lga_data = lga.get_latest_data(for_display=True)
+    lga_data = lga.get_latest_data(for_display=True, \
+        display_options={
+            'num_skilled_health_providers_per_1000': {'decimal_places': 3},
+            'num_chews_per_1000': {'decimal_places': 3},
+            'teacher_nonteachingstaff_ratio_lga': {'decimal_places': 3},
+        })
     def g(slug):
         value_dict = lga_data.get(slug, None)
         if value_dict:

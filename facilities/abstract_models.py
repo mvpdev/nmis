@@ -302,28 +302,36 @@ class DictModel(models.Model):
             d[variable_id][date_str(r['date'])] = non_null_value(r)
         return d
 
-    def _filter_data_for_display(self, data):
+    def _filter_data_for_display(self, data, display_options={}):
         DECIMAL_PLACES = 1
         # hack to format for now
         import locale
         locale.setlocale(locale.LC_ALL, '')
-        def display_boolean(value):
+        def display_boolean(value, display_options={}):
             if value:
                 return 'Yes'
             else:
                 return 'No'
 
-        def display_string(value):
+        def display_string(value, display_options={}):
             import re
             return ' '.join([x.capitalize() for x in re.findall(r'\w+', value)])
 
-        def display_float(value):
+        def display_float(value, display_options={}):
             if value is None: return None
-            return locale.format("%f", round(value, DECIMAL_PLACES), grouping=True).rstrip('0').rstrip('.')
+            if display_options:
+                decimal_places = display_options.get('decimal_places', DECIMAL_PLACES)
+            else:
+                decimal_places = DECIMAL_PLACES
+            return locale.format("%f", round(value, decimal_places), grouping=True).rstrip('0').rstrip('.')
 
-        def display_percent(value):
+        def display_percent(value, display_options={}):
             if value is None: return None
-            return locale.format("%f", round(value * 100, DECIMAL_PLACES), grouping=True).rstrip('0').rstrip('.') + "%"
+            if display_options:
+                decimal_places = display_options.get('decimal_places', DECIMAL_PLACES)
+            else:
+                decimal_places = DECIMAL_PLACES
+            return locale.format("%f", round(value * 100, decimal_places), grouping=True).rstrip('0').rstrip('.') + "%"
 
         display_functions = {
             'boolean': display_boolean,
@@ -336,14 +344,14 @@ class DictModel(models.Model):
         filtered_data = {}
         for slug, value_dict in data.items():
             filtered_data[slug] = {
-                'value': display_functions[data_dictionary[slug]['data_type']](value_dict['value']),
+                'value': display_functions[data_dictionary[slug]['data_type']](value_dict['value'], display_options.get(slug, {})),
                 'source': value_dict['source']
                 }
         return filtered_data
 
-    def get_latest_data(self, for_display=False):
+    def get_latest_data(self, for_display=False, display_options={}):
         if for_display:
-            return self._filter_data_for_display(self._get_latest_data())
+            return self._filter_data_for_display(self._get_latest_data(), display_options)
         else:
             return self._get_latest_data()
 
