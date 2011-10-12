@@ -239,6 +239,7 @@ def temp_facility_buildr(lga):
     ilist.append(("health", "Health Facilities", health_indicators, g("num_health_facilities")))
 
     education_indicators = [
+            ["Preprimary", g("num_preprimary_level")],
             ["Preprimary and primary", g("num_preprimary_primary_level")],
             ["Primary", g("num_primary_level")],
             ["Primary and junior secondary", g("num_primary_js_level")],
@@ -246,6 +247,7 @@ def temp_facility_buildr(lga):
             ["Junior and senior secondary", g("num_js_ss_level")],
             ["Senior secondary", g("num_ss_level")],
             ["Primary, junior and senior secondary", g("num_primary_js_ss_level")],
+            ["Other schools", g("num_other_level")],
             ["Pupil to teacher ratio", g("student_teacher_ratio_lga")],
             ["Percentage of teachers with NCE qualification", g("proportion_teachers_nce")],
             ["Classrooms in need of major repairs", g("number_classrooms_need_major_repair")],
