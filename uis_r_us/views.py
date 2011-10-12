@@ -464,14 +464,14 @@ def tmp_variables_for_sector(sector_slug, lga):
                 ["Percentage of facilities with waste disposal systems", "N/A", None, None, None],
             ],),
             ('Equipment and Supplies', [
-                ["Percentage of facilities that experienced a stock-out of essential medications in the past 3 months", g("proportion_stockout_essential_meds"), h("num_stockout_essential_meds", "num_health_facilities"), 0, "0%"],
+                ["Percentage of facilities that experienced a stock-out of essential medications in the past month", g("proportion_stockout_essential_meds"), h("num_stockout_essential_meds", "num_health_facilities"), 0, "0%"],
             ],),
         ],
         'education': [
             ('Facilities', [
-                ["Number of primary schools", g("num_primary_schools"), None, g("target_num_primary_schools")],
-                ["Number of junior secondary schools", g("num_junior_secondary_schools"), None, g("target_num_junior_secondary_schools")],
-                ["Number of senior secondary schools", g("num_senior_secondary_schools"), None, g("target_num_senior_secondary_schools")],
+                ["Number of primary schools (preprimary, primary, preprimary/primary, primary/js)", g("num_primary_schools"), None, g("target_num_primary_schools")],
+                ["Number of junior secondary schools (js, js/ss)", g("num_junior_secondary_schools"), None, g("target_num_junior_secondary_schools")],
+                ["Number of senior secondary schools (ss)", g("num_senior_secondary_schools"), None, g("target_num_senior_secondary_schools")],
                 ["Total number of schools", g("num_schools"), None, g("target_num_schools")],
             ],),
             ('Access', [
