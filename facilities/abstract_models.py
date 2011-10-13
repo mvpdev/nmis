@@ -45,6 +45,7 @@ class Variable(models.Model):
     slug = models.CharField(max_length=128, primary_key=True)
     data_type = models.CharField(max_length=20)
     description = models.TextField()
+    load_order = models.IntegerField(default=0)
 
     FIELDS = ['name', 'slug', 'data_type', 'description']
 
@@ -267,7 +268,7 @@ class DictModel(models.Model):
 
     def add_calculated_values(self, d, source=None, only_for_missing=False):
         for cls in [CalculatedVariable, PartitionVariable]:
-            for v in cls.objects.all():
+            for v in cls.objects.all().order_by('load_order'):
                 if only_for_missing and self.get(v):
                     pass
                 else:
