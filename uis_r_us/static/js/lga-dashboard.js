@@ -689,7 +689,7 @@ function imageUrls(imageSizes, imgId) {
                     var cdd = getColDataDiv()
                             .html(Mustache.to_html(this.template, data))
                             .css({
-                                height: 218,
+                                height: 180,
                                 width: 1000
                                 });
                     if(hasClickAction(column, 'piechart_true') || hasClickAction(column, 'piechart_false')) {

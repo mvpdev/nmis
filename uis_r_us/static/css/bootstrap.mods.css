@@ -86,6 +86,7 @@ html .topbar .breadcrumb.grey {
 }
 html .content {
   padding-top: 78px;
+  background-color: #fff;
 }
 html .breadcrumb.grey {
   padding: 3px 15px;
@@ -113,9 +114,6 @@ html .topbar .page-title-row p.bc a, html .topbar .page-title-row p.bc span {
 }
 html .container {
     width: 1100px;
-}
-html .content {
-    background-color: #fff;
 }
 html .home-map-nav h3 {
     line-height: 18px;

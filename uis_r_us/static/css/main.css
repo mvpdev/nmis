@@ -533,8 +533,12 @@ div.display-box .occurrences {
 	margin-left: 4px;
 	font-size: 11px;
 }
+div.display-box .content {
+	padding: 10px;
+}
 div.display-box * {
 	margin: 0;
+	color: #eeeeee;
 }
 div.db-l-w, div.db-r-w {
 	width: 50%;
