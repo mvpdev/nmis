@@ -79,11 +79,13 @@ PS. some exception data: %s""" % (str(lga.id), str(e)))
 
     @print_time
     def reset_database(self):
-        call_command('syncdb', interactive=False)
-        call_command('migrate')
         if self._kill_db:
             self._drop_database()
+            call_command('syncdb', interactive=False)
+            call_command('migrate')
         else:
+            call_command('syncdb', interactive=False)
+            call_command('migrate')
             self._drop_data()
 
     def load_system(self):
