@@ -273,15 +273,18 @@ PS. some exception data: %s""" % (str(lga.id), str(e)))
     def create_facilities_from_csv(self, sector, data_source, source=None):
         path = os.path.join(self._data_dir, 'facility_csvs', data_source)
         for d in CsvReader(path).iter_dicts():
+            variables_to_invalidate = []
             if '_lga_id' not in d:
                 print "FACILITY MISSING LGA ID"
                 continue
             if d['_lga_id'] not in self.lga_ids:
                 continue
+            if '_error_ids' in d and d['_error_ids']:
+                variables_to_invalidate = d['_error_ids'].split()
             d['_data_source'] = data_source
             d['_facility_type'] = sector.lower()
             d['sector'] = sector
-            facility = FacilityBuilder.create_facility_from_dict(d, source=source)
+            facility = FacilityBuilder.create_facility_from_dict(d, source=source, invalid_vars=variables_to_invalidate)
 
     @print_time
     def load_lga_data(self):

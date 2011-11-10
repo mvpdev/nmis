@@ -14,13 +14,13 @@ class FacilityRecord(DataRecord):
 
     @classmethod
     def counts_by_variable(cls, lga):
-        records = cls.objects.filter(facility__lga=lga).values('facility', 'variable', 'float_value', 'boolean_value', 'string_value', 'facility__sector').annotate(Max('date')).distinct()
+        records = cls.objects.filter(facility__lga=lga, invalid=False).values('facility', 'variable', 'float_value', 'boolean_value', 'string_value', 'facility__sector').annotate(Max('date')).distinct()
         def infinite_dict():
             return defaultdict(infinite_dict)
         result = infinite_dict()
         for d in records:
             variable = Variable.get(d['variable'])
-            value = '%s_value' % variable.data_type
+            value = variable.value_field()
             if d[value] in result[d['facility__sector']][d['variable']]:
                 result[d['facility__sector']][d['variable']][d[value]] += 1
             else:
@@ -39,8 +39,8 @@ class FacilityRecord(DataRecord):
 
     @classmethod
     def count_by_lga(cls, variable):
-        value = '%s_value' % variable.data_type
-        records = cls.objects.filter(variable=variable).values('facility__lga', 'facility', value).annotate(Max('date')).distinct()
+        value = variable.value_field()
+        records = cls.objects.filter(variable=variable, invalid=False).values('facility__lga', 'facility', value).annotate(Max('date')).distinct()
         result = defaultdict(dict)
         for d in records:
             try:
@@ -83,26 +83,28 @@ class LGAIndicator(Variable):
     method = models.CharField(max_length=16)  # count_true/false, avg, percentage_true/false, proportion_true/false, sum
     sector = models.ForeignKey(Sector, null=True)
 
-    def count_boolean(self, looking_for):
+    def count_boolean(self):
         assert self.origin.data_type == 'boolean', 'Assertion failed: %s (%s) is not a boolean' % (self.origin.slug, self.origin.data_type)
-        records = FacilityRecord.objects.filter(variable=self.origin, facility__sector=self.sector).values('facility', 'facility__lga', 'boolean_value').annotate(Max('date')).distinct()
-        result = dict([(record['facility__lga'], 0.0) for record in records])
+        records = FacilityRecord.objects.filter(variable=self.origin, facility__sector=self.sector, invalid=False).values('facility', 'facility__lga', 'boolean_value').annotate(Max('date')).distinct()
+        result = dict([(record['facility__lga'], {'true': 0.0, 'false': 0.0, 'true_and_false': 0.0}) for record in records])
         for d in records:
-            if looking_for and d['boolean_value']:
-                result[d['facility__lga']] += 1.0
-            elif not looking_for and not d['boolean_value']:
-                result[d['facility__lga']] += 1.0
+            if d['boolean_value'] == True:
+                result[d['facility__lga']]['true'] += 1.0
+            elif d['boolean_value'] == False:
+                result[d['facility__lga']]['false'] += 1.0
+            if d['boolean_value'] == True or d['boolean_value'] == False:
+                result[d['facility__lga']]['true_and_false'] += 1.0
         return result
 
     def count_true(self):
-        return self.count_boolean(looking_for=True)
+        return dict([(lga, count_dict['true']) for lga, count_dict in self.count_boolean().items()])
 
     def count_false(self):
-        return self.count_boolean(looking_for=False)
+        return dict([(lga, count_dict['false']) for lga, count_dict in self.count_boolean().items()])
 
     def stats(self):
         assert self.origin.data_type in ['float', 'percent', 'proportion'], 'Assertion failed: %s (%s) is not a float' % (self.origin.slug, self.origin.data_type)
-        records = FacilityRecord.objects.filter(variable=self.origin, facility__sector=self.sector).values('facility', 'facility__lga', 'float_value').annotate(Max('date')).distinct()
+        records = FacilityRecord.objects.filter(variable=self.origin, facility__sector=self.sector, invalid=False).values('facility', 'facility__lga', 'float_value').annotate(Max('date')).distinct()
         result = dict([(record['facility__lga'], {'avg': 0.0, 'count': 0.0, 'sum': 0.0}) for record in records])
         for d in records:
             i = result[d['facility__lga']]['count']
@@ -125,10 +127,10 @@ class LGAIndicator(Variable):
         return dict([(lga, stats['count']) for lga, stats in self.stats().items()])
 
     def percentage_true(self):
-        return dict([(lga, count / float(len(Facility.objects.filter(sector=self.sector, lga=lga)))) for lga, count in self.count_true().items()])
+        return dict([(lga, count_dict['true'] / count_dict['true_and_false']) for lga, count_dict in self.count_boolean().items()])
 
     def percentage_false(self):
-        return dict([(lga, count / float(len(Facility.objects.filter(sector=self.sector, lga=lga)))) for lga, count in self.count_false().items()])
+        return dict([(lga, count_dict['false'] / count_dict['true_and_false']) for lga, count_dict in self.count_boolean().items()])
 
     def proportion_true(self):
         return self.percentage_true()
@@ -212,7 +214,7 @@ class Facility(DictModel):
     def get_latest_data_by_lga(cls, lga):
         d = defaultdict(dict)
 #        records = FacilityRecord.objects.filter(facility__lga=lga).order_by('variable__slug', '-date')
-        records = FacilityRecord.objects.filter(facility__lga=lga).order_by('-date')
+        records = FacilityRecord.objects.filter(facility__lga=lga, invalid=False).order_by('-date')
         for r in records:
             # todo: test to make sure this sorting is correct
 #            if r.variable.slug not in d[r.facility.id]:
@@ -226,7 +228,7 @@ class Facility(DictModel):
         if self.data_type == "string":
             return None
         else:
-            records = FacilityRecord.objects.filter(variable=self, facility__lga=lga)
+            records = FacilityRecord.objects.filter(variable=self, facility__lga=lga, invalid=False)
             tot = 0
             for record in records:
                 tot += record.value
@@ -237,7 +239,7 @@ class Facility(DictModel):
         if self.data_type == "string":
             return None
         else:
-            records = FacilityRecord.objects.filter(variable=self, facility__lga=lga)
+            records = FacilityRecord.objects.filter(variable=self, facility__lga=lga, invalid=False)
             count = records.count()
             if count == 0:
                 return 0

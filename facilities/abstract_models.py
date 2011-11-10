@@ -80,13 +80,23 @@ class Variable(models.Model):
             return float(x)
 
         def get_boolean(x):
+            if isinstance(x, bool):
+                return x
             if isinstance(x, basestring):
                 regex = re.compile('(true|t|yes|y|1)', re.IGNORECASE)
-                return regex.search(value) is not None
-            return bool(x)
+                if regex.search(x.strip()) is not None:
+                    return True
+            if isinstance(x, basestring):
+                regex = re.compile('(false|f|no|n|0)', re.IGNORECASE)
+                if regex.search(x.strip()) is not None:
+                    return False
+            raise Exception
 
         def get_string(x):
-            return unicode(x)
+            if unicode(x).strip():
+                return unicode(x).strip()
+            else:
+                raise Exception
 
         cast_function = {
             'float': get_float,
@@ -138,6 +148,28 @@ def sum_non_null_values(d, keys):
             pass
     return sum(operands)
 
+
+def or_non_null_values(d, formulas):
+    """
+    Helper function for calculated variables.
+    """
+    def any_operand(d, operands):
+        for op in operands:
+            if eval(op):
+                return True
+        return False
+    # check whether each of the formulas evaluates and
+    # if so, add it to the list to be or'ed together
+    operands = []
+    for f in formulas:
+        try:
+            eval(f)
+            operands.append(f)
+        except:
+            pass
+    if not operands:
+        raise Exception
+    return any_operand(d, operands)
 
 class CalculatedVariable(Variable):
     """
@@ -201,6 +233,7 @@ class DataRecord(models.Model):
     variable = models.ForeignKey(Variable)
     date = models.DateField(null=True)
     source = models.CharField(null=True, max_length=255)
+    invalid = models.BooleanField(default=False)
 
     class Meta:
         abstract = True
@@ -225,7 +258,7 @@ class DictModel(models.Model):
     class Meta:
         abstract = True
 
-    def set(self, variable, value, date=None, source=None):
+    def set(self, variable, value, date=None, source=None, invalid=False):
         """
         This is used to add a data record of type variable to the instance.
         It returns the casted value for the variable.
@@ -237,16 +270,21 @@ class DictModel(models.Model):
             self._data_record_fk: self,
             'date': date,
             'source': source,
+            'invalid': invalid,
             }
-        d, created = self._data_record_class.objects.get_or_create(**kwargs)
-        d.value = variable.get_casted_value(value)
-        d.save()
-        return d.value
+        potential_value = variable.get_casted_value(value)
+        if potential_value is not None:
+            d, created = self._data_record_class.objects.get_or_create(**kwargs)
+            d.value = potential_value
+            d.save()
+            return d.value
+        else:
+            return potential_value
 
     def get(self, variable):
         return self.get_latest_value_for_variable(variable)
 
-    def add_data_from_dict(self, d, source=None, and_calculate=False, only_for_missing=False):
+    def add_data_from_dict(self, d, source=None, and_calculate=False, only_for_missing=False, invalid_vars=[]):
         """
         Key value pairs in d that are in the data dictionary will be
         added to the database along with any calculated variables that apply.
@@ -262,11 +300,15 @@ class DictModel(models.Model):
                 if only_for_missing and self.get(variable):
                         pass
                 else:
-                    d[key] = self.set(variable, value, None, source)
+                    invalid = True if variable.slug in invalid_vars else False
+                    v = self.set(variable, value, None, source, invalid)
+                    d[key] = v if not invalid else None
+        # clean up d by removing None and invalid values before we calculate anything
+        d = dict([(key, value) for key, value in d.iteritems() if value is not None])
         if and_calculate:
-            self.add_calculated_values(d, source, only_for_missing)
+            self.add_calculated_values(d, source, only_for_missing, invalid_vars)
 
-    def add_calculated_values(self, d, source=None, only_for_missing=False):
+    def add_calculated_values(self, d, source=None, only_for_missing=False, invalid_vars=[]):
         for cls in [CalculatedVariable, PartitionVariable]:
             for v in cls.objects.all().order_by('load_order'):
                 if only_for_missing and self.get(v):
@@ -274,7 +316,8 @@ class DictModel(models.Model):
                 else:
                     v.add_calculated_value(d)
                     if v.slug in d:
-                        self.set(v, d[v.slug], None, source)
+                        invalid = True if v.slug in invalid_vars else False
+                        self.set(v, d[v.slug], None, source, invalid)
 
     def _kwargs(self):
         """
@@ -363,7 +406,8 @@ class DictModel(models.Model):
                 if t[val_k] is not None:
                     return t[val_k]
             return None
-        records = self._data_record_class.objects.filter(**self._kwargs())
+        kwargs = dict(self._kwargs(), **{'invalid': False})
+        records = self._data_record_class.objects.filter(**kwargs)
         d = {}
         for r in records.values('variable_id', 'string_value', 'float_value', 'boolean_value', 'date', 'source'):
             # todo: test to make sure this sorting is correct
@@ -383,7 +427,7 @@ class DictModel(models.Model):
         return modd
 
     def get_latest_value_for_variable(self, variable):
-        if type(variable) == str:
+        if isinstance(variable, basestring):
             variable = Variable.get(slug=variable)
         try:
             kwargs = self._kwargs()

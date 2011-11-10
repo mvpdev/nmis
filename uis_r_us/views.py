@@ -8,6 +8,7 @@ from display_defs.models import FacilityTable, MapLayerDescription
 from nga_districts.models import LGA, Zone, State
 from django.db.models import Count
 import json
+from facilities.models import FacilityRecord, Variable, LGAIndicator
 
 
 @login_required
@@ -393,16 +394,28 @@ def tmp_variables_for_sector(sector_slug, lga):
             'num_chews_per_1000': {'decimal_places': 3},
             'teacher_nonteachingstaff_ratio_lga': {'decimal_places': 3},
         })
+    record_counts = FacilityRecord.counts_by_variable(lga.id)
     def g(slug):
         value_dict = lga_data.get(slug, None)
         if value_dict:
             return value_dict.get('value', None)
         else:
             return None
-    def h(slug1, slug2):
+    def i(slug1, slug2):
         if g(slug1) == None or g(slug2) == None:
             return None
         return "%s/%s" % (g(slug1), g(slug2))
+    def h(slug1, slug2):
+        try:
+            indicator = LGAIndicator.objects.get(slug=slug1)
+            count = 0
+            records = record_counts[indicator.sector.slug][indicator.origin.slug]
+            print records
+            for k, v in records.items():
+                count += v
+        except:
+            return None
+        return "%s/%s" % (g(slug1), count)
     example = {
         'health': [
             ('Facilities', [
@@ -424,7 +437,7 @@ def tmp_variables_for_sector(sector_slug, lga):
                 ["Total number of laboratory technicians in the LGA", g("num_lab_techs"), None, g("target_num_lab_techs"), None],
                 ["Number of health providers per 1,000 population", g("num_skilled_health_providers_per_1000"), None, None, None],
                 ["Number of CHEWs per 1,000 population", g("num_chews_per_1000"), None, None, None],
-                ["Number of facilities where all salaried staff were paid during the last pay period", g("proportion_staff_paid"), h("num_staff_paid", "num_health_facilities"), g("target_total_health_facilities"), "100%"],
+                ["Number of facilities where all salaried staff were paid during the last pay period", g("proportion_staff_paid"), h("num_staff_paid", "staff_paid_lastmth_yn"), g("target_total_health_facilities"), "100%"],
             ],),
             ('Child Health', [
                 ["Percentage of facilities that offer routine immunization", g("proportion_health_facilities_routine_immunization"), h("num_health_facilities_routine_immunization", "num_health_facilities"), g("target_total_health_facilities"), "100%"],
@@ -480,8 +493,8 @@ def tmp_variables_for_sector(sector_slug, lga):
                 ["Junior secondary net intake rate (NIR) for boys", "N/A", None, "N/A"],
                 ["Junior Secondary net intake rate (NIR) for girls", "N/A", None, "N/A"],
                 ["Percentage of schools farther than 1km from catchement area", g("proportion_schools_1kmplus_catchment"), h("num_schools_1kmplus_catchment", "num_schools"), "0%", "0"],
-                ["Percentage of primary schools farther than 1km from nearest secondary school", g("proportion_primary_schools_1kmplus_ss"), h("num_primary_schools_1kmplus_ss", "num_primary_schools"), "0%", "0"],
-                ["Percentage of schools with students living farther than 3km", g("proportion_students_3kmplus"), h("num_students_3kmplus", "num_schools"), "0%", "0"],
+                ["Percentage of primary schools farther than 1km from nearest secondary school", g("proportion_primary_schools_1kmplus_ss"), i("num_primary_schools_1kmplus_ss", "num_primary_schools"), "0%", "0"],
+                ["Percentage of schools with students living farther than 3km", g("proportion_students_3kmplus"), h("num_students_3kmplus", "students_living_3kmplus_school"), "0%", "0"],
             ],),
             ('Participation', [
                 ["Primary net enrollment rate (NER) for boys", g("net_enrollment_rate_boys_primary"), None, "100%"],
@@ -499,8 +512,8 @@ def tmp_variables_for_sector(sector_slug, lga):
                 ["Pupil to toilet ratio", g("pupil_toilet_ratio"), None, "35"],
                 ["Building Structure"],
                 ["Percentage of schools with access to power", g("proportion_schools_power_access"), h("num_schools_power_access", "num_schools"), "100%", g("target_num_schools")],
-                ["Percentage of classrooms needing major repair", g("proportion_classrooms_need_major_repair"), h("number_classrooms_need_major_repair", "num_classrooms_lga"), "0%", "0"],
-                ["Percentage of classrooms needing minor repair", g("proportion_classrooms_need_minor_repair"), h("number_classrooms_need_minor_repair", "num_classrooms_lga"), "0%", "0"],
+                ["Percentage of classrooms needing major repair", g("proportion_classrooms_need_major_repair"), i("number_classrooms_need_major_repair", "num_classrooms_lga"), "0%", "0"],
+                ["Percentage of classrooms needing minor repair", g("proportion_classrooms_need_minor_repair"), i("number_classrooms_need_minor_repair", "num_classrooms_lga"), "0%", "0"],
                 ["Percentage of schools with a roof in good condition", g("proportion_schools_covered_roof_good_cond"), h("num_schools_covered_roof_good_cond", "num_schools"), "100%", g("num_schools")],
                 ["Health & Safety"],
                 ["Percentage of schools with a dispensary/health clinic", g("proportion_schools_with_clinic_dispensary"), h("num_schools_with_clinic_dispensary", "num_schools"), "100%", g("target_num_schools")],
@@ -521,8 +534,8 @@ def tmp_variables_for_sector(sector_slug, lga):
                 ["Primary school pupil to teacher ratio", g("primary_school_pupil_teachers_ratio_lga"), None, "&#8804; 35"],
                 ["Junior secondary school pupil to teacher ratio", g("junior_secondary_school_pupil_teachers_ratio_lga"), None, "&#8804; 35"],
                 ["Teaching to non-teaching staff ratio", g("teacher_nonteachingstaff_ratio_lga"), None, "N/A"],
-                ["Percentage of qualified teachers (with NCE)", g("proportion_teachers_nce"), h("num_teachers_nce", "num_teachers"), "100%", g("target_num_teachers")],
-                ["Percentage of teachers who participated in training in the past 12 months", g("proportion_teachers_training_last_year"), h("num_teachers_training_last_year", "num_teachers"), "100%", g("target_num_teachers")],
+                ["Percentage of qualified teachers (with NCE)", g("proportion_teachers_nce"), i("num_teachers_nce", "num_teachers"), "100%", g("target_num_teachers")],
+                ["Percentage of teachers who participated in training in the past 12 months", g("proportion_teachers_training_last_year"), i("num_teachers_training_last_year", "num_teachers"), "100%", g("target_num_teachers")],
 	    ],),
 	    ('Institutional Development',[
                 ["Percentage of schools that have delayed teacher payments in the past 12 months", g("proportion_schools_delay_pay"), h("num_schools_delay_pay", "num_schools"), "0%", "0"],
@@ -557,25 +570,25 @@ def tmp_variables_for_sector(sector_slug, lga):
                 ["Total number of water sources", g("num_water_points"), None, ""],
             ],),
             ('Maintenance', [
-                ["Percentage of boreholes, protected or treated sources that are poorly maintained", g("proportion_protected_water_points_non_functional"), h("num_protected_water_sources_non_functional", "num_protected_water_sources"), ""],
+                ["Percentage of boreholes, protected or treated sources that are poorly maintained", g("proportion_protected_water_points_non_functional"), i("num_protected_water_sources_non_functional", "num_protected_water_sources"), ""],
             ]),
             ('Population Served', [
                 ["Population served per well-maintained borehole, protected or treated water source", g("population_served_per_protected_and_functional_water_source"), None, ""],
                 ["Population served per borehole, protected or treated water source (whether or not it is well-maintained)", g("population_served_per_all_water_sources"), None, ""],
             ]),
             ('Lift Mechanisms for Boreholes and Tube Wells', [
-                ["Percentage of boreholes and tube wells with a non-motorized lift (human or animal-powered)", g("proportion_boreholes_tubewells_manual"), h("num_boreholes_tubewells_manual", "num_boreholes_and_tubewells"), ""],
-                ["Percentage of boreholes and tube wells with a motorized lift", g("proportion_boreholes_tubewells_non_manual"), h("num_boreholes_tubewells_non_manual", "num_boreholes_and_tubewells"), ""],
-                ["Percentage of boreholes and tube wells with a diesel lift", g("proportion_boreholes_tubewells_diesel"), h("num_boreholes_tubewells_diesel", "num_boreholes_and_tubewells"), ""],
-                ["Percentage of boreholes and tube wells with an electric motor lift", g("proportion_boreholes_tubewells_electric"), h("num_boreholes_tubewells_electric", "num_boreholes_and_tubewells"), ""],
-                ["Percentage of boreholes and tube wells with a solar lift", g("proportion_boreholes_tubewells_solar"), h("num_boreholes_tubewells_solar", "num_boreholes_and_tubewells"), ""],
+                ["Percentage of boreholes and tube wells with a non-motorized lift (human or animal-powered)", g("proportion_boreholes_tubewells_manual"), i("num_boreholes_tubewells_manual", "num_boreholes_and_tubewells"), ""],
+                ["Percentage of boreholes and tube wells with a motorized lift", g("proportion_boreholes_tubewells_non_manual"), i("num_boreholes_tubewells_non_manual", "num_boreholes_and_tubewells"), ""],
+                ["Percentage of boreholes and tube wells with a diesel lift", g("proportion_boreholes_tubewells_diesel"), i("num_boreholes_tubewells_diesel", "num_boreholes_and_tubewells"), ""],
+                ["Percentage of boreholes and tube wells with an electric motor lift", g("proportion_boreholes_tubewells_electric"), i("num_boreholes_tubewells_electric", "num_boreholes_and_tubewells"), ""],
+                ["Percentage of boreholes and tube wells with a solar lift", g("proportion_boreholes_tubewells_solar"), i("num_boreholes_tubewells_solar", "num_boreholes_and_tubewells"), ""],
             ],),
             ('Poorly Maintained Lift Mechanisms for Boreholes and Tube Wells', [
-                ["Percentage of non-motorized (human or animal-powered) lifts that are poorly maintained", g("proportion_boreholes_tubewells_manual_non_functional"), h("num_boreholes_tubewells_manual_non_functional", "num_boreholes_tubewells_manual"), ""],
-                ["Percentage of all motorized lifts that are poorly maintained", g("proportion_boreholes_tubewells_non_manual_non_functional"), h("num_boreholes_tubewells_non_manual_non_functional", "num_boreholes_tubewells_non_manual"), ""],
-                ["Percentage of diesel-powered lifts that are poorly maintained", g("proportion_boreholes_tubewells_diesel_non_functional"), h("num_boreholes_tubewells_diesel_non_functional", "num_boreholes_tubewells_diesel"), ""],
-                ["Percentage of electrically-powered lifts that are poorly maintained", g("proportion_boreholes_tubewells_electric_non_functional"), h("num_boreholes_tubewells_electric_non_functional", "num_boreholes_tubewells_electric"), ""],
-                ["Percentage of solar-powered lifts that are poorly maintained", g("proportion_boreholes_tubewells_solar_non_functional"), h("num_boreholes_tubewells_solar_non_functional", "num_boreholes_tubewells_solar"), ""],
+                ["Percentage of non-motorized (human or animal-powered) lifts that are poorly maintained", g("proportion_boreholes_tubewells_manual_non_functional"), i("num_boreholes_tubewells_manual_non_functional", "num_boreholes_tubewells_manual"), ""],
+                ["Percentage of all motorized lifts that are poorly maintained", g("proportion_boreholes_tubewells_non_manual_non_functional"), i("num_boreholes_tubewells_non_manual_non_functional", "num_boreholes_tubewells_non_manual"), ""],
+                ["Percentage of diesel-powered lifts that are poorly maintained", g("proportion_boreholes_tubewells_diesel_non_functional"), i("num_boreholes_tubewells_diesel_non_functional", "num_boreholes_tubewells_diesel"), ""],
+                ["Percentage of electrically-powered lifts that are poorly maintained", g("proportion_boreholes_tubewells_electric_non_functional"), i("num_boreholes_tubewells_electric_non_functional", "num_boreholes_tubewells_electric"), ""],
+                ["Percentage of solar-powered lifts that are poorly maintained", g("proportion_boreholes_tubewells_solar_non_functional"), i("num_boreholes_tubewells_solar_non_functional", "num_boreholes_tubewells_solar"), ""],
             ]),
         ],
     }
