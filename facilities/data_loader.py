@@ -460,6 +460,7 @@ PS. some exception data: %s""" % (str(lga.id), str(e)))
             TableColumn,
             ColumnCategory,
             MapLayerDescription,
+            KeyRename,
         ]
         for c in classes_with_data_to_drop:
             try:

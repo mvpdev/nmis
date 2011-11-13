@@ -5,9 +5,9 @@ import datetime
 
 
 class KeyRename(models.Model):
-    data_source = models.CharField(max_length=64)
-    old_key = models.CharField(max_length=64)
-    new_key = models.CharField(max_length=64)
+    data_source = models.CharField(max_length=255)
+    old_key = models.CharField(max_length=255)
+    new_key = models.CharField(max_length=255)
 
     class Meta:
         unique_together = (("data_source", "old_key"),)
