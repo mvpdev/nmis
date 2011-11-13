@@ -118,6 +118,8 @@ PS. some exception data: %s""" % (str(lga.id), str(e)))
                 lga.save()
             except LGA.DoesNotExist, e:
                 print "lga not found: %s" % str(lga_id)
+            except ValueError, e:
+                print "lga not found: %s" % str(lga_id)
         print "%d LGAs have data" % LGA.objects.filter(data_available=True).count()
 
     def load_data(self, lga_ids=[]):
@@ -254,10 +256,10 @@ PS. some exception data: %s""" % (str(lga.id), str(e)))
             cls_variable_loader(GapVariable)(d)
 
         variable_loader_methods = {
-            'partition': cls_variable_loader(PartitionVariable),
+            #'partition': cls_variable_loader(PartitionVariable),
             'calculated': cls_variable_loader(CalculatedVariable),
             'lga': load_lga_variable,
-            'gap': gap_loader,
+            #'gap': gap_loader,
             'default': cls_variable_loader(Variable)
         }
         for variable_file_data in self._config['variables']:
