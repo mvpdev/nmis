@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="new-dashboard" style="padding: 0 40px 20px;">
+	{% if gap_indicators %}
+        <div style="position:relative;">
+            <p style="position:absolute; right: 0; top: -55px">
+                <a class="btn large" href="#" id="gap-analysis-activator">
+                    Switch to Gap Analysis
+                </a>
+            </p>
+        </div>
+    {% endif %}
+	<div id="non-gap">
 	<table class="mdg-table" style="width:100%">
 		<tbody>
 			{% for sector_name, indicators in table_data %}
@@ -45,7 +55,63 @@
 			{% endfor %}
 		</tbody>
 	</table>
+	</div>
+    {% if gap_indicators %}
+        <div id="gap-analysis" data-content-title="{{sector|title}} Gap Analysis">
+            <table class="mdg-table" style="width:100%">
+                <tbody>
+					{% for gap_indicator_row in gap_indicators %}
+					<tr>
+						{% if gap_indicator_row.type == "title" %}
+						<th colspan="2" class="indheader">
+							{{gap_indicator_row.name}}
+						</th>
+						<th class="indheader mdg_header flush-right">
+							Current
+						</th>
+						<th class="indheader mdg_header flush-right target">
+							Target
+						</th>
+						<th class="indheader mdg_header flush-right target">
+							Gap
+						</th>
+						{% else %}
+						<td class="empty-first empty bb"></td>
+                        <td class="indicator-name bb">
+                            {% if gap_indicator_row.gap != None %}
+                            <strong>
+                            {% endif %}
+                            {% if gap_indicator_row.name != None %}
+							    {{gap_indicator_row.name}}
+                            {% endif %}
+                            {% if gap_indicator_row.gap != None %}
+                            </strong>
+                            {% endif %}
+                        </td>
+                        <td class="indvalue bb">
+                            {% if gap_indicator_row.current != None %}
+							    {{gap_indicator_row.current}}
+                            {% endif %}
+                        </td>
+                        <td class="indvalue bb target">
+                            {% if gap_indicator_row.target != None %}
+							    {{gap_indicator_row.target}}
+                            {% endif %}
+                        </td>
+                        <td class="indvalue bb gap">
+                            {% if gap_indicator_row.gap != None %}
+							    <strong>{{gap_indicator_row.gap}}</strong>
+                            {% endif %}
+                        </td>
+						{% endif %}
+					</tr>
+					{% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
 </div>
+
 
 {% endblock %}
 
@@ -192,6 +258,34 @@ if(typeof lgaId !== 'undefined') {
     $('<li />').html(lgaTmpLink).appendTo(menu);
     $('<li />').html(facTmpLink).appendTo(menu);
 }
+
+{{context}}
+
+$(function(){
+	$('#gap-analysis').hide();
+	var gapIsActive = false;
+    var originalTitleText = $('.page-header h1').html();
+    var originalSmallText = $('.page-header h1 small').html();
+	$('#gap-analysis-activator').click(function(evt){
+		evt.preventDefault();
+		var linkText, titleText;
+		if(gapIsActive) {
+			$('#gap-analysis').hide();
+			$('#non-gap').show();
+			linkText = "Switch to Gap Analysis";
+			gapIsActive = false;
+            titleText = originalTitleText;
+		} else {
+			$('#gap-analysis').show();
+			$('#non-gap').hide();
+			linkText = "Switch to Overview";
+			gapIsActive = true;
+            titleText = $('#gap-analysis').data('contentTitle') + "<small>" + originalSmallText + "</small>";
+		}
+        $('.page-header h1').html(titleText);
+		$(this).text(linkText);
+	});
+});
 
 </script>
 {% endblock %}
