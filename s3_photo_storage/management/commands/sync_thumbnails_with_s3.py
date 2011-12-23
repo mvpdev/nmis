@@ -18,6 +18,6 @@ class Command(BaseCommand):
             shutil.rmtree(THUMBNAIL_DIRECTORY)
         os.mkdir(THUMBNAIL_DIRECTORY)
         s3s = S3Storage()
-        for photo in SurveyPhoto.objects.filter(thumbnail_uploaded=False).all()[0:1000]:
+        for photo in SurveyPhoto.objects.filter(thumbnail_uploaded=False).all():
             filepath = os.path.join(THUMBNAIL_DIRECTORY, "%s.jpg" % photo.id)
             photo.sync_thumbnail(s3s)

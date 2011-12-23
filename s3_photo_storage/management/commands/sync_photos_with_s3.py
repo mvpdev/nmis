@@ -12,5 +12,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         s3s = S3Storage()
-        for photo in SurveyPhoto.objects.filter(uploaded=False).all()[0:1000]:
+        for photo in SurveyPhoto.objects.filter(uploaded=False).all():
             photo.send_to_s3(s3s)
