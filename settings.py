@@ -102,6 +102,7 @@ INSTALLED_APPS = (
     'xform_manager',
     'map_xforms',
     'submission_qr',
+    's3_photo_storage',
 
     #required for django-sentry
     # 'indexer',
