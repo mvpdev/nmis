@@ -67,7 +67,7 @@ class SurveyPhoto(models.Model):
         im.save(thumb_path)
         return thumb_path
 
-    def sync_thumbnail(self, s3, thumbnail_directory="temp_thumbnails", size=200):
+    def sync_thumbnail(self, s3, thumbnail_directory="temp_thumbnails", size=90):
         print "Uploading thumbnail size:%s -- %s" % (str(size), self.photo_name)
         if s3==False:
             raise Exception("No S3")
