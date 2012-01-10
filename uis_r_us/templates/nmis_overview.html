@@ -5,10 +5,21 @@
 	</small>
 </h1>
 <div class="row">
-	<div class="span9">
-		<p style="font-style:italic;text-align:center">
-			Profile Information
-		</p>
+	<div class="span8">
+		<table>
+			<tbody>
+				{% for name, value in profile_data %}
+				<tr>
+					<td>
+						{{name}}
+					</td>
+					<td>
+						{{value.value}}
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
 	</div>
 	<div class="span9">
 		<p style="font-style:italic;text-align:center">
@@ -27,15 +38,27 @@
 	</div>
 </div>
 <div class="row">
-	<div class="span6">
-		<hr>
+	{% for slug, name, indicators in facility_indicators %}
+	<div class="span4 offset1">
+		<h3>
+			{{name}}
+		</h3>
+		<table>
+			<tbody>
+				{% for indicator, value in indicators %}
+				<tr>
+					<td>
+						{{indicator}}
+					</td>
+					<td>
+						{{value}}
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
 	</div>
-	<div class="span6">
-		<hr>
-	</div>
-	<div class="span6">
-		<hr>
-	</div>
+	{% endfor %}
 </div>
 <div class="row">
 	<div class="span18">
@@ -49,8 +72,49 @@
 </div>
 <div class="row">
 	<div class="span18">
-		<p style="font-style:italic;">
-			MDG table goes here...
-		</p>
+		<div id="mdg-table-wrap">
+		<div class="mdg-tables">
+			<table class="mdg-table">
+				{% for goal, indicators in mdg_indicators %}
+				<tbody>
+					<tr>
+						<td colspan="5" class="mdg_header">
+							{{goal}}
+						</td>
+					</tr>
+					{% for indicator in indicators %}
+					<tr>
+						<td class="empty"></td>
+						{% if indicator.0 %}
+						<td>
+							{{indicator.0}}
+						</td>
+						{% else %}
+						<td class="empty">
+						</td>
+						{% endif %}
+						<td>
+	                    {{indicator.1}}
+	                    <br>
+	                    <em class='source'>{{indicator.2.source}}</em>
+	                    </td>
+	                    <td class="empty data">
+	                    {% if indicator.2 != None and indicator.2.value != None %}
+	                        {{indicator.2.value}}
+	                    {% else %}
+	                        {% if indicator.2 != None %}
+	                            {{indicator.2}}
+	                        {% else %}
+	                            N/A
+	                        {% endif %}
+	                    {% endif %}
+	                    </td>
+					</tr>
+					{% endfor %}
+				</tbody>
+				{% endfor %}
+			</table>
+		</div>
+		</div>
 	</div>
 </div>

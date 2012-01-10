@@ -262,6 +262,38 @@ class Facility(DictModel):
                 })
         return facilities
 
+    def save_s3_photo_id(self):
+        """
+        This will set an "s3_photo_id" which is used to build urls of the image and thumbnails.
+
+        The photos are stored in s3 in 36 different directories (a-z0-9.) This is to prevent the situation
+        where all the photos are stored in one directory.
+
+        "123456.jpg" would create an s3_photo_id of "f:123456"
+            * In this example, "f" is the first character of the md5sum of the image ID.
+            * the image ID is pulled from the filename given by ODK.
+            * this ID is used to build URLs for thumbnails and full size images.
+        """
+        s3_variable, created = Variable.objects.get_or_create(name="S3 Photo ID",
+                        slug="s3_photo_id", data_type="string")
+        try:
+            s3_photo_id_record = FacilityRecord.objects.get(variable=s3_variable, facility=self)
+            return s3_photo_id_record.value
+        except FacilityRecord.DoesNotExist, e:
+            s3_photo_id_record = False
+
+        try:
+            photo = FacilityRecord.objects.get(variable="photo", facility=self)
+        except FacilityRecord.DoesNotExist, e:
+            return None
+        import re
+        photo_id = re.sub(".jpg", "", photo.value)
+        def _get_photo_subdirectory(photo_id):
+            import hashlib
+            return hashlib.md5(photo_id).hexdigest()[0]
+        s3_photo_id = ":".join([_get_photo_subdirectory(photo_id), photo_id])
+        self.set(s3_variable, s3_photo_id)
+        return s3_photo_id
 
 from xform_manager.models import Instance
 from django.db.models.signals import post_save

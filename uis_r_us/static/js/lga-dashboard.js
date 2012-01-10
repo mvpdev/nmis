@@ -693,7 +693,7 @@ function imageUrls(imageSizes, imgId) {
                 // var tabulations = $.map(getTabulations(sector.slug, column.slug), function(k, val){
                 //                     return { 'value': k, 'occurrences': val }
                 //                 });
-                var tabulations = Tabulation.sectorSlugAsArray(sector.slug, column.slug);
+                var tabulations = NMIS.Tabulation.sectorSlugAsArray(sector.slug, column.slug);
                 getMustacheTemplate('facility_column_description', function(){
                     var data = {
                         tabulations: tabulations,
@@ -728,7 +728,7 @@ function imageUrls(imageSizes, imgId) {
 			    pcWrap.find('.content').hide();
 			}
 //                        var tabulations = getTabulations(sector.slug, column.slug, 'true false undefined'.split(' '));
-                        var tabulations = Tabulation.sectorSlug(sector.slug, column.slug, 'true false undefined'.split(' '));
+                        var tabulations = NMIS.Tabulation.sectorSlug(sector.slug, column.slug, 'true false undefined'.split(' '));
             		    createOurGraph(pcWrap,
             		                    pieChartDisplayDefinitions,
             		                    tabulations,

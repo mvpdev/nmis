@@ -1,44 +1,14 @@
 //FacilitySelector will probably end up in the NMIS object like all the other modules.
-var FacilitySelector = (function(){
-    var active = false;
-    function activate(params){
-        var fId = params.id;
-        NMIS.IconSwitcher.shiftStatus(function(id, item) {
-            if(id !== fId) {
-                return "background";
-            } else {
-                active = true;
-                return "normal";
-            }
-        });
-    }
-    function isActive(){
-        return active;
-    }
-    function deselect() {
-        if(active) {
-            var sector = NMIS.activeSector();
-            NMIS.IconSwitcher.shiftStatus(function(id, item) {
-                return item.sector === sector ? "normal" : "background";
-            });
-            active = false;
-        }
-    }
-    return {
-        activate: activate,
-        isActive: isActive,
-        deselect: deselect
-    }
-})();
-
 
 +function facilitiesDisplay(){
-    var lgaData = DataLoader.fetch("/facilities/site/" + lgaUniqueSlug);
-	var variableData = DataLoader.fetch("/facility_variables");
-
+    var lgaData = NMIS.DataLoader.fetch("/facilities/site/" + lgaUniqueSlug);
+	var variableData = NMIS.DataLoader.fetch("/facility_variables");
     function loadFacilities() {
-        $('#conditional-content').hide();
 	    var params = {};
+        if((""+window.location.search).match(/facility=(\d+)/)) {
+            params.facilityId = (""+window.location.search).match(/facility=(\d+)/)[1];
+        }
+        $('#conditional-content').hide();
 	    _.each(this.params, function(param, pname){
 	        if($.type(param)==="string" && param !== '') {
 	            params[pname] = param.replace('/', '');
@@ -55,10 +25,10 @@ var FacilitySelector = (function(){
                 launchFacilities(lgaData, variableData, params);
     		});
 	}
-	dashboard.get("/nmis~/:state/:lga/facilities/?", loadFacilities);
-	dashboard.get("/nmis~/:state/:lga/facilities/:sector/?", loadFacilities);
-    dashboard.get("/nmis~/:state/:lga/facilities/:sector/:subsector/?", loadFacilities);
-    dashboard.get("/nmis~/:state/:lga/facilities/:sector/:subsector/:indicator/?", loadFacilities);
+	dashboard.get("/nmis~/:state/:lga/facilities/?(#.*)?", loadFacilities);
+	dashboard.get("/nmis~/:state/:lga/facilities/:sector/?(#.*)?", loadFacilities);
+    dashboard.get("/nmis~/:state/:lga/facilities/:sector/:subsector/?(#.*)?", loadFacilities);
+    dashboard.get("/nmis~/:state/:lga/facilities/:sector/:subsector/:indicator/?(#.*)?", loadFacilities);
 }();
 
 function prepBreadcrumbValues(e, keys, env){
@@ -78,13 +48,13 @@ function prepBreadcrumbValues(e, keys, env){
 }
 
 function prepFacilities(params) {
-    DisplayWindow.setVisibility(true);
+    NMIS.DisplayWindow.setVisibility(true);
     var facilitiesMode = {name:"Facility Detail", slug:"facilities"};
 	var e = {
 	    state: state,
 	    lga: lga,
 	    mode: facilitiesMode,
-	    sector: Sectors.pluck(params.sector),
+	    sector: NMIS.Sectors.pluck(params.sector),
 	};
 	e.subsector = e.sector.getSubsector(params.subsector);
 	e.indicator = e.sector.getIndicator(params.indicator);
@@ -110,15 +80,17 @@ function launchFacilities(lgaData, variableData, params) {
     }
 	var facilities = lgaData.facilities;
 	var sectors = variableData.sectors;
-	var sector = Sectors.pluck(params.sector)
+	var sector = NMIS.Sectors.pluck(params.sector)
 	var e = {
 	    state: state.slug,
         lga: lga.slug,
         mode: 'facilities',
 	    sector: sector,
 	    subsector: sector.getSubsector(params.subsector),
-	    indicator: sector.getIndicator(params.indicator)
+	    indicator: sector.getIndicator(params.indicator),
+	    facilityId: params.facilityId
 	};
+	NMIS.Env(e);
 	NMIS.activeSector(sector);
 	NMIS.loadFacilities(facilities);
 	if(e.sector !== undefined && e.subsector === undefined) {
@@ -130,8 +102,8 @@ function launchFacilities(lgaData, variableData, params) {
         llString: lgaData.profileData.gps.value,
         elem: wElems.elem0
     };
-	if(!MapMgr.init(MapMgr_opts)) {
-	    MapMgr.addLoadCallback(function(){
+	if(!NMIS.MapMgr.init(MapMgr_opts)) {
+	    NMIS.MapMgr.addLoadCallback(function(){
             var map = new google.maps.Map(this.elem.get(0), {
                 zoom: 8,
                 center: new google.maps.LatLng(this.ll.lat, this.ll.lng),
@@ -160,7 +132,7 @@ function launchFacilities(lgaData, variableData, params) {
                     education: "education.png",
                     health: "health.png",
                     water: "water.png",
-                    default: "book_green_wb.png"
+                    'default': "book_green_wb.png"
                 };
                 var url = "/static/images/icons_f/" + status + "_" + (iconFiles[slug] || iconFiles['default']);
                 return url
@@ -171,12 +143,26 @@ function launchFacilities(lgaData, variableData, params) {
             function markerClick(){
                 var sslug = NMIS.activeSector().slug;
                 if(sslug==this.nmis.item.sector.slug || sslug === "overview") {
-                    FacilitySelector.activate({id: this.nmis.id});
+                    dashboard.setLocation(NMIS.urlFor(_.extend(e, {
+                        facilityId: this.nmis.id
+                    })));
                 }
             }
+            function markerMouseover() {
+                var sslug = NMIS.activeSector().slug;
+                if(this.nmis.item.sector.slug === sslug || sslug === "overview") {
+                    NMIS.FacilityHover.show(this);
+                }
+            }
+            function markerMouseout() {
+                NMIS.FacilityHover.hide();
+            }
             function mapClick() {
-                if(FacilitySelector.isActive()) {
-                    FacilitySelector.deselect();
+                if(NMIS.FacilitySelector.isActive()) {
+                    NMIS.FacilitySelector.deselect();
+                    dashboard.setLocation(NMIS.urlFor(_.extend(e, {
+                        facilityId: false
+                    })));
                 }
             }
             google.maps.event.addListener(map, 'click', mapClick);
@@ -208,7 +194,9 @@ function launchFacilities(lgaData, variableData, params) {
                         item: item,
                         id: id
                     };
-                    google.maps.event.addListener(mI.marker, 'click', markerClick)
+                    google.maps.event.addListener(mI.marker, 'click', markerClick);
+                    google.maps.event.addListener(mI.marker, 'mouseover', markerMouseover);
+                    google.maps.event.addListener(mI.marker, 'mouseout', markerMouseout);
                     bounds.extend(mI.latlng);
                     this.mapItem(id, mI);
                 }
@@ -235,7 +223,7 @@ function launchFacilities(lgaData, variableData, params) {
             return "normal";
         });
     } else {
-        if(!!e.subsectorUndefined || !FacilitySelector.isActive()) {
+        if(!!e.subsectorUndefined || !NMIS.FacilitySelector.isActive()) {
             NMIS.IconSwitcher.shiftStatus(function(id, item) {
                 return item.sector === e.sector ? "normal" : "background";
             });
@@ -275,7 +263,9 @@ function launchFacilities(lgaData, variableData, params) {
             }
         });
         tableElem.find('tbody').delegate('tr', 'click', function(){
-            FacilitySelector.activate({id: $(this).data('facilityId')});
+            dashboard.setLocation(NMIS.urlFor(_.extend(e, {
+                facilityId: $(this).data('facilityId')
+            })));
         });
         tableElem.appendTo(wElems.elem1content);
         if(!!e.subsector) FacilityTables.select(e.sector, e.subsector);
@@ -284,6 +274,8 @@ function launchFacilities(lgaData, variableData, params) {
             var obj = _.extend({}, e.indicator);
             var mm = $(mustachify('indicator-feature', obj));
             mm.find('a.close').click(function(){
+                var xx = NMIS.urlFor(_.extend({}, e, {indicator: false}));
+                dashboard.setLocation(xx);
                 return false;
             });
             (function(rcElem, rtElem){
@@ -298,6 +290,11 @@ function launchFacilities(lgaData, variableData, params) {
             mm.prependTo('.facility-display');
             FacilityTables.highlightColumn(e.indicator);
         })();
+	}
+	if(!!e.facilityId) {
+	    NMIS.FacilitySelector.activate({
+	        id: e.facilityId
+	    });
 	}
 }
 function mustachify(id, obj) {

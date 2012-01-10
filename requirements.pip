@@ -7,6 +7,7 @@ ipython==0.10.2
 -e git+https://github.com/modilabs/pyxform.git#egg=pyxform
 wsgiref==0.1.2
 xlrd==0.7.1
+django-compressor==1.1.2
 
 # sql alchemy is used for importing data from the phones
 SQLAlchemy==0.7.1

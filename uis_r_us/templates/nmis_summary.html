@@ -1,35 +1,114 @@
 <h1 style="text-transform:capitalize">{{sector}} Overview
 	<small class="conditional-content" data-content="lga.full-name">{{lga.name}}, {{state.name}}</small>
 </h1>
-<table class="mdg-table" style="width:100%">
-	<tbody>
-		<tr>
-			<th colspan="2" class="indheader">
-				sector_name
-			</th>
-			<th class="indheader mdg_header flush-right">
-				Current
-			</th>
-			<th class="indheader mdg_header flush-right target" style="display:none">
-				Target
-			</th>
-		</tr>
-        <tr>
-			<td class="empty-first empty bb"></td>
-            <td class="empty indheader mdg_header" >
-				indicator length 1
-            </td>
-        </tr>
-		<tr>
-			<td class="empty-first empty bb"></td>
-			<td class="indicator-name bb">
-				indicator length > 1
-			</td>
-			<td class="indvalue bb">
-				N/A
-			</td>
-			<td class="indvalue bb target" style="display:none">
-			</td>
-		</tr>
-	</tbody>
-</table>
+<div class="new-dashboard" style="padding: 0 40px 20px;">
+	{% if gap_indicators %}
+        <div style="position:relative;">
+            <p style="position:absolute; right: 0; top: -55px">
+                <a class="btn large" href="#" id="gap-analysis-activator">
+                    Switch to Gap Analysis
+                </a>
+            </p>
+        </div>
+    {% endif %}
+	<div id="non-gap">
+	<table class="mdg-table" style="width:100%">
+		<tbody>
+			{% for sector_name, indicators in sector_data %}
+			<tr>
+				<th colspan="2" class="indheader">
+					{{sector_name}}
+				</th>
+				<th class="indheader mdg_header flush-right">
+					Current
+				</th>
+				<th class="indheader mdg_header flush-right target" style="display:none">
+					Target
+				</th>
+			</tr>
+			{% for indicator in indicators %}
+            {% if indicator|length_is:"1" %}
+            <tr>
+				<td class="empty-first empty bb"></td>
+                <td class="empty indheader mdg_header" >
+					{{indicator.0}}
+                </td>
+            </tr>
+            {% else %}
+			<tr>
+				<td class="empty-first empty bb"></td>
+				<td class="indicator-name bb">
+					{{indicator.0}}
+				</td>
+				<td class="indvalue bb">
+                    {% if indicator.1 == None %}
+                        N/A
+                    {% else %}
+					    {{indicator.1|safe}}{% if indicator.2 != None %}&nbsp;({{indicator.2|safe}}){% endif %}
+                    {% endif %}
+				</td>
+				<td class="indvalue bb target" style="display:none">
+					{{indicator.3|safe}}{% if indicator.4 != None %}&nbsp;({{indicator.4|safe}}){% endif %}
+				</td>
+			</tr>
+            {% endif %}
+			{% endfor %}
+			{% endfor %}
+		</tbody>
+	</table>
+	</div>
+    {% if gap_indicators %}
+        <div id="gap-analysis" data-content-title="{{sector|title}} Gap Analysis">
+            <table class="mdg-table" style="width:100%">
+                <tbody>
+					{% for gap_indicator_row in gap_indicators %}
+					<tr>
+						{% if gap_indicator_row.type == "title" %}
+						<th colspan="2" class="indheader">
+							{{gap_indicator_row.name}}
+						</th>
+						<th class="indheader mdg_header flush-right">
+							Current
+						</th>
+						<th class="indheader mdg_header flush-right target">
+							Target
+						</th>
+						<th class="indheader mdg_header flush-right target">
+							Gap
+						</th>
+						{% else %}
+						<td class="empty-first empty bb"></td>
+                        <td class="indicator-name bb">
+                            {% if gap_indicator_row.gap != None %}
+                            <strong>
+                            {% endif %}
+                            {% if gap_indicator_row.name != None %}
+							    {{gap_indicator_row.name}}
+                            {% endif %}
+                            {% if gap_indicator_row.gap != None %}
+                            </strong>
+                            {% endif %}
+                        </td>
+                        <td class="indvalue bb">
+                            {% if gap_indicator_row.current != None %}
+							    {{gap_indicator_row.current}}
+                            {% endif %}
+                        </td>
+                        <td class="indvalue bb target">
+                            {% if gap_indicator_row.target != None %}
+							    {{gap_indicator_row.target}}
+                            {% endif %}
+                        </td>
+                        <td class="indvalue bb gap">
+                            {% if gap_indicator_row.gap != None %}
+							    <strong>{{gap_indicator_row.gap}}</strong>
+                            {% endif %}
+                        </td>
+						{% endif %}
+					</tr>
+					{% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>

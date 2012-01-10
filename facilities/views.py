@@ -51,6 +51,9 @@ def facilities_for_site(request, site_id):
             dvoput = {}
             for variable in dvals.keys():
                 dvoput[variable] = dvals[variable][1]
+            if u'photo' in dvoput and u's3_photo_id' not in dvoput:
+                fobj = Facility.objects.get(id=facility)
+                dvoput[u's3_photo_id'] = fobj.save_s3_photo_id()
             d[facility] = dvoput
         oput['facilities'] = d
         oput['profileData'] = lga.get_latest_data()

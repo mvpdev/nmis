@@ -13,6 +13,7 @@ from facilities.models import FacilityRecord, Variable, LGAIndicator
 from uis_r_us.indicators.gap_analysis import all_gap_indicators
 from uis_r_us.indicators.overview import tmp_variables_for_sector
 from uis_r_us.indicators.mdg import tmp_get_mdg_indicators
+from uis_r_us.indicators.facility import tmp_facility_indicators
 
 def _get_state_lga_from_first_two_items(arr):
     try:
@@ -26,11 +27,11 @@ def _get_state_lga_from_first_two_items(arr):
 @login_required
 def nmis_view(request, state_id, lga_id, reqpath=""):
     context = RequestContext(request)
-    context.jsmodules = ['modes', 'tabulations', 'facility_tables']
+    context.jsmodules = ['tabulations', 'facility_tables']
     context.url_root = "/nmis~/"
     context.reqpath = reqpath
-    context.include_sectors = [(s, "summary_%s.html" % s) for s in
-                ['overview', 'health', 'education', 'water']]
+    context.include_sectors = \
+                ['overview', 'health', 'education', 'water']
     context.sector_data = json.dumps(sector_data())
     try:
         context.state = State.objects.get(slug=state_id)
@@ -38,6 +39,23 @@ def nmis_view(request, state_id, lga_id, reqpath=""):
         context.lga = context.state.lgas.get(unique_slug=full_id)
     except Exception, e:
         return HttpResponseRedirect("/")
+    lga_data = context.lga.get_latest_data(for_display=True)
+    data_for_display = context.lga.get_latest_data(for_display=True, display_options={
+                'num_skilled_health_providers_per_1000': {'decimal_places': 3},
+                'num_chews_per_1000': {'decimal_places': 3},
+            })
+
+    def g(slug):
+        return lga_data.get(slug, None)
+    context.profile_data = _profile_variables(g)
+    context.facility_indicators = tmp_facility_indicators(context.lga, data_for_display)
+    context.mdg_indicators = tmp_get_mdg_indicators(lga_data, g)
+    record_counts = FacilityRecord.counts_by_variable(context.lga.id)
+    def _gap_variables(ss, lga_data):
+        return []
+    context.sectors = [ \
+        [s, tmp_variables_for_sector(s, lga_data, record_counts), _gap_variables(s, lga_data)] \
+            for s in ['health', 'education', 'water']]
     return render_to_response("nmis_view.html", context_instance=context)
 
 def summary_views(request, lga_id, sector_id=""):
@@ -287,63 +305,6 @@ def test_module(request, module_id):
 def test_map(request):
     return render_to_response("test_map.html")
 
-def temp_facility_buildr(lga):
-    lga_data = lga.get_latest_data(for_display=True, \
-        display_options={
-            'num_skilled_health_providers_per_1000': {'decimal_places': 3},
-            'num_chews_per_1000': {'decimal_places': 3},
-        })
-    def g(slug):
-        value_dict = lga_data.get(slug, None)
-        if value_dict:
-            return value_dict.get('value', None)
-        else:
-            return None
-    def h(slug1, slug2):
-        if g(slug1) == None or g(slug2) == None:
-            return None
-        return "%s/%s" % (g(slug1), g(slug2))
-    ilist = []
-    health_indicators = [
-            ["Health posts and dispensaries", g("num_level_1_health_facilities")],
-            ["Primary health clinics", g("num_level_2_health_facilities")],
-            ["Primary health centres", g("num_level_3_health_facilities")],
-            ["Comprehensive health centres & hospitals", g("num_level_4_health_facilities")],
-            ["Other health facillities", g("num_level_other_health_facilities")],
-            ["Facilities that perform Caesarean sections", g("num_health_facilities_c_sections")],
-            ["Skilled health providers per 1,000 population ", g("num_skilled_health_providers_per_1000")],
-            ["CHEWs per 1,000 population", g("num_chews_per_1000")],
-        ]
-    ilist.append(("health", "Health Facilities", health_indicators, g("num_health_facilities")))
-
-    education_indicators = [
-            ["Preprimary", g("num_preprimary_level")],
-            ["Preprimary and primary", g("num_preprimary_primary_level")],
-            ["Primary", g("num_primary_level")],
-            ["Primary and junior secondary", g("num_primary_js_level")],
-            ["Junior secondary", g("num_js_level")],
-            ["Junior and senior secondary", g("num_js_ss_level")],
-            ["Senior secondary", g("num_ss_level")],
-            ["Primary, junior and senior secondary", g("num_primary_js_ss_level")],
-            ["Other schools", g("num_other_level")],
-            ["Pupil to teacher ratio", g("student_teacher_ratio_lga")],
-            ["Percentage of teachers with NCE qualification", g("proportion_teachers_nce")],
-            ["Classrooms in need of major repairs", g("number_classrooms_need_major_repair")],
-        ]
-    ilist.append(("education", "Schools", education_indicators, g("num_schools")))
-
-    water_indicators = [
-            ["Developed/treated spring and surface water", g("num_developed_and_treated_or_protected_surface_or_spring_water")],
-            ["Protected dug wells", g("num_protected_dug_wells")],
-            ["Boreholes and tube wells", g("num_boreholes_and_tubewells")],
-            ["Boreholes and tube wells with non-motorized lift/pump mechanisms", g("num_boreholes_tubewells_manual")],
-            ["Boreholes and tube wells with motorized lift/pump mechanisms", g("num_boreholes_tubewells_non_manual")],
-            ["Well-maintained boreholes, protected and treated water sources", g("num_protected_water_sources_functional")],
-            ["Population served per well-maintained borehole, protected or treated water source", g("population_served_per_protected_and_functional_water_source")],
-        ]
-    ilist.append(("water", "Water Points", water_indicators, g("num_water_points")))
-    return ilist
-
 def get_nav_urls(lga, mode='lga', sector='overview'):
     d = {}
     if mode == "lga":
@@ -379,6 +340,7 @@ def new_dashboard(request, lga_id):
         lga = LGA.objects.get(unique_slug=lga_id)
     except:
         return HttpResponseRedirect("/")
+    context.preview_link = "/nmis~/%s" % lga.url_id
     context.site_title = "LGA Overview"
     context.small_title = "%s, %s" % (lga.state.name, lga.name)
     context.breadcrumbs = [
@@ -394,7 +356,11 @@ def new_dashboard(request, lga_id):
     lga_data = lga.get_latest_data(for_display=True)
     def g(slug):
         return lga_data.get(slug, None)
-    context.facility_indicators = temp_facility_buildr(lga)
+    data_for_display = lga.get_latest_data(for_display=True, display_options={
+                'num_skilled_health_providers_per_1000': {'decimal_places': 3},
+                'num_chews_per_1000': {'decimal_places': 3},
+            })
+    context.facility_indicators = tmp_facility_indicators(lga, data_for_display)
     context.mdg_indicators = tmp_get_mdg_indicators(lga_data, g)
     context.navs = [{ 'url': '/', 'name': 'Home' },
                     { 'url': '/new_dashboard/%s' % lga.unique_slug,
@@ -405,14 +371,17 @@ def new_dashboard(request, lga_id):
     context.active_districts = active_districts()
     context.lga = lga
     context.state = lga.state
-    context.profile_variables = [
+    context.profile_variables = _profile_variables(g)
+    return render_to_response("new_dashboard.html", context_instance=context)
+
+def _profile_variables(g):
+    return [
         ["LGA Chairman", g("chairman_name")],
         ["LGA Secretary", g("secretary_name")],
         ["Population (2006)", g("pop_population")],
         ["Area (square km)", g("area_sq_km")],
         ["Distance from capital (km)", g("state_capital_distance")],
     ]
-    return render_to_response("new_dashboard.html", context_instance=context)
 
 def new_sector_overview(request, lga_id, sector_slug):
     try:

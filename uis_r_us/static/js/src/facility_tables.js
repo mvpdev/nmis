@@ -58,7 +58,7 @@ var FacilityTables = (function(){
     }
     function createForSector(s, opts) {
         var tbody = $('<tbody />');
-        var sector = Sectors.pluck(s);
+        var sector = NMIS.Sectors.pluck(s);
         var iDiv = $('<div />')
                         .addClass('facility-display')
                         .data('sector', sector.slug);

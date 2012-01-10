@@ -1,12 +1,12 @@
 +function summaryDisplay(){
     function loadSummary(s){
-        DisplayWindow.setVisibility(false);
+        NMIS.DisplayWindow.setVisibility(false);
         var params = s.params;
         var _env = {
             mode: {name: 'Summary', slug: 'summary'},
             state: state,
             lga: lga,
-            sector: Sectors.pluck(params.sector) || overviewObj
+            sector: NMIS.Sectors.pluck(params.sector) || overviewObj
         };
         var bcValues = prepBreadcrumbValues(_env,
                         "state lga mode sector subsector indicator".split(" "),
@@ -26,10 +26,8 @@
             cc.show();
         })(_env.sector);
     }
-    dashboard = $.sammy(function(){
-        this.get("/nmis~/:state/:lga/summary/?", loadSummary);
-        this.get("/nmis~/:state/:lga/summary/:sector/?", loadSummary);
-        this.get("/nmis~/:state/:lga/summary/:sector/:subsector/?", loadSummary);
-        this.get("/nmis~/:state/:lga/summary/:sector/:subsector/:indicator/?", loadSummary);
-    });
+    dashboard.get("/nmis~/:state/:lga/summary/?(#.*)?", loadSummary);
+    dashboard.get("/nmis~/:state/:lga/summary/:sector/?(#.*)?", loadSummary);
+    dashboard.get("/nmis~/:state/:lga/summary/:sector/:subsector/?(#.*)?", loadSummary);
+    dashboard.get("/nmis~/:state/:lga/summary/:sector/:subsector/:indicator/?(#.*)?", loadSummary);
 }()

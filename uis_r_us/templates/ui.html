@@ -2,6 +2,7 @@
 {% block head %}
 <link rel="stylesheet" href="/static/css/wax-controls.css" type="text/css" media="all" charset="utf-8">
 <link rel="stylesheet" href="/static/openlayers/default/style.css" type="text/css" media="all" charset="utf-8">
+{% block css %}
 <style type="text/css" media="all">
 #lga-widget-wrap table th, #lga-widget-wrap table td {
 	padding: 0;
@@ -21,6 +22,7 @@
 	z-index: 999;
 }
 </style>
+{% endblock %}
 <script type="text/javascript" charset="utf-8">
 	var lgaId = (function(_){return _})({{lga_id|safe}});
 </script>
@@ -133,11 +135,10 @@
 	</div>
 {% endblock %}
 {% block js %}
+<script src="/static/js/src/tabulations.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/js/application.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/js/launch-open-layers.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript" charset="utf-8">
-<!--
-
 var debugMode = false;
 
 var pageRootUrl = "/~";
@@ -149,12 +150,9 @@ var defaultMode = {
 
 var loadMap = true;
 //var loadMap = $("input#load-map").attr('checked');
-
--->
 </script>
 <script src="/static/js/lga-dashboard.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript" charset="utf-8">
-<!--
 
 //layer data is pulled from the database now.
 var layerData = (function(_){return _})({{layer_details|safe}});
@@ -602,7 +600,5 @@ $(function(){
 		dashboard.run();
 	});
 });
-
--->
 </script>
 {% endblock %}

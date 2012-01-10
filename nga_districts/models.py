@@ -107,6 +107,15 @@ class LGA(NamedModel, DictModel):
         round3 = cls.objects.filter(scale_up=True, survey_round=0)
         round3.update(survey_round=3)
 
+    @property
+    def url_id(self):
+        """
+        state/lga
+        (instead of)
+        state_lga
+        """
+        return '/'.join([self.state.slug, self.slug])
+
     @classmethod
     def get_query_set_for_round(cls, r):
         return cls.objects.filter(survey_round=r).order_by("name")
