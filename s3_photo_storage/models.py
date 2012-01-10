@@ -47,6 +47,10 @@ class SurveyPhoto(models.Model):
     def _s3_size_path(self, size="0"):
         return os.path.join(S3_DIR_NAME, self.get_bucket_name(), size, "%s.jpg" % self.photo_name)
 
+    def _remove_original_photo(self):
+        if self.uploaded:
+            os.remove(self.local_path)
+
     def send_to_s3(self, s3, size="0"):
         print "Uploading %s" % self.photo_name
         ff = FileWrapper(self.local_path)
