@@ -1,0 +1,48 @@
+{% load i18n %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <!-- todo: replace site_title with page_title -->
+	<title>
+	  {{ site_title|default:"Nigeria MDG Information System" }}
+	</title>
+	{% load compress %}
+	{% compress css %}
+	<link rel="stylesheet" href="/static/css/chosen.css" type="text/css" media="all" charset="utf-8">
+	<link rel="stylesheet" href="/static/jquery-ui/jquery-ui-1.8.7.custom.css" type="text/css" media="screen" title="Sitewide" charset="utf-8" />
+	{% block css %}{% endblock %}
+	{% if not css_debug_mode %}
+	<link rel="stylesheet" href="/static/css/styles.min.css" type="text/css" media="all" />
+	{% endif %}
+	{% endcompress %}
+	{% if css_debug_mode %}
+	<link rel="stylesheet/less" type="text/css" href="/static/css/styles.less">
+	<script type="text/javascript">
+		var less = { poll: 10001, env: "development" };
+	</script>
+	<script src="/static/js/libs/less.js" type="text/javascript" charset="utf-8"></script>
+	{% endif %}
+	{% block head %}{% endblock %}
+</head>
+<body class="nmis home">
+	<div class="container">
+		<div class="content">
+		  <code>
+		    
+		    {{json_data}}
+		    
+		  </code>
+		  <!--
+			{% block content %}{% endblock %}
+			-->
+		</div>
+	</div> <!-- /container -->
+	{% block footer %}{% endblock %}
+	{% if preview_link %}
+	<a href="{{preview_link}}" class="beta-preview"><span>View Beta Site</span> *</a>
+	{% endif %}
+</body>
+</html>

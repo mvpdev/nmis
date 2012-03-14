@@ -75,7 +75,8 @@ def nmis_view(request, state_id, lga_id, reqpath=""):
     context.sectors = [ \
         [s, tmp_variables_for_sector(s, data_for_display, {}), _gap_variables(s)] \
             for s in ['health', 'education', 'water']]
-    return render_to_response("nmis_view.html", context_instance=context)
+    context.json_data = json.dumps(context.sectors)
+    return render_to_response("wtf.html", context_instance=context)
 
 def summary_views(request, lga_id, sector_id=""):
     context = RequestContext(request)
@@ -85,6 +86,10 @@ def summary_views(request, lga_id, sector_id=""):
         return HttpResponseBadRequest("Not cool")
     context.lga = lga
     return render_to_response("summary_view.html")
+
+def wtf(request):
+    c = RequestContext(request)
+    return render_to_response("wtf.html", context_instance=c)
 
 @login_required
 def dashboard(request, reqpath):

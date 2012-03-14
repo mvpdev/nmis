@@ -1,0 +1,261 @@
+{% extends "base_wtf.html" %}
+{% block js %}
+
+<script type="text/javascript" charset="utf-8">
+		$(function(){
+		  $('a[rel=popover]').popover();
+		})
+</script>
+
+<!--
+nmis_view.js: handles routes and calls functions from nmis_facilities or nmis_summary.
+-->
+
+<!--
+nmis_facilities.js and nmis_summary.js: sets up the page based on the parameters passed from nmis_view
+	Utilizes the modules that have already been loaded into the page.
+-->
+
+{% endblock %}
+
+<!--
+To avoid django/mustache conflicts, I'm using <{x}> instead of double-curly-brackets
+-->
+{% block content %}
+<script type="text/javascript" charset="utf-8">
+  var reqPath = "{{reqpath}}",
+		urlRoot = "{{url_root}}",
+		stateName = "{{state.name}}",
+		state = {
+			name: "{{state.name}}",
+			slug: "{{state.slug}}"
+		},
+		lga = {
+			name: "{{lga.name}}",
+			slug: "{{lga.slug}}",
+			latLng: "{{latlng_str}}"
+		},
+		profileData = [{{profile_data_json|safe}}][0],
+		lgaName = "{{lga.name}}",
+		lgaUniqueSlug = "{{lga.unique_slug}}";
+
+		var sectorData = {{sector_data|safe}};
+</script>
+<div id="conditional-contentz">
+	{% for sector, sector_data, gap_indicators in sectors %}
+	<div class="lga {{sector}}">
+		<div class="cwrap">
+      <h2 class="some-lpadding" style="text-transform:capitalize">{{sector}} Overview
+      	<small class="conditional-content" data-content="lga.full-name">{{lga.name}}, {{state.name}}</small>
+      </h2>
+      <div class="nmis-sector-summary">
+      	{% if gap_indicators %}
+              <div class="gap-analysis" data-content-title="{{sector|title}} Gap Analysis">
+                  <table class="mdg-table" style="width:100%">
+                      <tbody>
+      					{% for gap_indicator_row in gap_indicators %}
+      					<tr>
+      						{% if gap_indicator_row.type == "title" %}
+      						<th colspan="2" class="indheader">
+      						  {{gap_indicator_row.name}}
+      						</th>
+      						<th class="indheader mdg_header flush-right">
+      							Current
+      						</th>
+      						<th class="indheader mdg_header flush-right target">
+      							Target
+      						</th>
+      						<th class="indheader mdg_header flush-right target">
+      							Gap
+      						</th>
+      						{% else %}
+      						<td class="empty-first empty bb"></td>
+                              <td class="indicator-name bb">
+                                  {% if gap_indicator_row.gap != None %}
+                                  <strong>
+                                  {% endif %}
+
+                                  {% if gap_indicator_row.name != None %}
+
+                                    {% if gap_indicator_row.description %}
+                                    <a href="#" rel="popover" data-placement="right" data-content="{{gap_indicator_row.description}}" title="{{gap_indicator_row.name}}">
+                                      {{gap_indicator_row.name}}
+                                    </a>
+                                    {% else %}
+                                      {{gap_indicator_row.name}}
+                                    {% endif %}
+
+                                  {% endif %}
+                                  {% if gap_indicator_row.gap != None %}
+                                  </strong>
+                                  {% endif %}
+                              </td>
+                              <td class="indvalue bb">
+                                  {% if gap_indicator_row.current != None %}
+      							    {{gap_indicator_row.current}}
+                                  {% endif %}
+                              </td>
+                              <td class="indvalue bb target">
+                                  {% if gap_indicator_row.target != None %}
+      							    {{gap_indicator_row.target}}
+                                  {% endif %}
+                              </td>
+                              <td class="indvalue bb gap">
+                                  {% if gap_indicator_row.gap != None %}
+      							    <strong>{{gap_indicator_row.gap}}</strong>
+                                  {% endif %}
+                              </td>
+      						{% endif %}
+      					</tr>
+      					{% endfor %}
+                      </tbody>
+                  </table>
+              </div>
+          {% endif %}
+      </div>
+		</div>
+	</div>
+	{% endfor %}
+</div>
+<script type="text/x-mustache-template" id="facility-hover">
+<div class="popover below fade in hover-overlay" style="display: block; top: <{top}>px; left: <{left}>px;">
+	<div class="arrow" style="left:<{arrowLeft}>px"></div>
+	<div class="inner">
+		<div class="content">
+			<p>
+				<div class="photothumb"></div>
+				<strong><{name}></strong> <em>(<{community}>)</em>
+				<br>
+				<br>
+				<span style="font-size:smaller; line-height:11px">
+				Click the icon to view details
+				</span>
+			</p>
+		</div>
+	</div>
+</div>
+</script>
+<script type="text/x-mustache-template" id="facility-popup">
+	<div class="row" title="<{name}>">
+		<div class="row">
+		  <div class="span2-5">
+				<ul class="media-grid" style="margin-left:10px">
+				  <li>
+						<a href="<{image_url}>" target="_BLANK" class="lightbox-or-something">
+						  <img src="<{thumbnail_url}>" width="90" height="90">
+						</a>
+					</li>
+				</ul>
+			</div>
+			<div class="span6">
+			  <div class="select-wrap">
+				<select>
+					<{#sector_data}>
+					<option value="<{slug}>"><{name}></option>
+					<{/sector_data}>
+				</select>
+				</div>
+				<div class="fac-content">
+				  <{#sector_data}>
+					<div data-sector-slug="<{slug}>" class="facility-sector-select-box">
+						<table>
+							<tbody>
+								<{#variables}>
+								<tr>
+									<td>
+										<{name}>
+									</td>
+									<td>
+									  <span class="<{classes}>"><{value}></span>
+									</td>
+								</tr>
+								<{/variables}>
+							</tbody>
+						</table>
+					</div>
+					<{/sector_data}>
+				</div>
+			</div>
+		</div>
+	</div>
+</script>
+<script type="text/x-mustache-template" id="indicator-feature">
+	<div class="indicator-feature">
+		<div class="overlay-wrap print-hide-block">
+			<div class="overlay">
+				<div class="row">
+					<h3 class="span6 overlay-header">
+						<{name}>
+					</h3>
+					<a href="#x" class="close"><span>[X]</span></a>
+				</div>
+				<div class="raph-circle">
+				</div>
+				<div class="raph-text">
+					<p class="descrip">
+						<{description}>
+					</p>
+					<div class="raph-legend">
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="embedded" style="display:none">
+			<div class="row">
+				<div class="span12" style="padding-left:12px">
+					<h3>
+						<small>Selected Indicator:</small> <{name}>
+					</h3>
+					<p>
+						<{description}>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</script>
+<script type="text/x-mustache-template" id="facilities-overview">
+<div class="container no-fill row" id="lga-widget-wrap">
+	<div class="span9">
+		<div class="row">
+			<div class="span8 offset1">
+  			<h3>
+  				Facilities <span class="replace-counts" data-count-slug="facilities">(<{facCount}>)</span>
+  			</h3>
+			 <{#overviewSectors}>
+			 <p>
+			    <a href="<{url}>" class="sector-btn btn large" style="display:block">
+			      <span class="sector-icon <{slug}>"> &nbsp;. </span>
+			      <{name}>
+			      (<{counts}>) &raquo;
+			    </a>
+			 </p>
+			 <{/overviewSectors}>
+			</div>
+		</div>
+	</div>
+	<div class="span8">
+		<table class="simple-lines">
+			<tbody>
+				<tr>
+					<td class="header" colspan="2">
+						<{lgaName}>
+					</td>
+				</tr>
+				<{#profileData}>
+				<tr>
+				  <td><{name}></td>
+				  <td class="l-align">
+						<span class="replace-data" data-lga-variable="<{value}>"><{value}></span>
+					</td>
+				</tr>
+				<{/profileData}>
+			</tbody>
+		</table>
+	</div>
+	<div class="span18">
+		<br>
+	</div>
+</div>
+</script>
+{% endblock %}
