@@ -17,17 +17,21 @@ def home(request):
 def data_dictionary(request):
     return HttpResponse(Variable.get_full_data_dictionary())
 
-def facilities_for_site(request, site_id, as_dict=False):
+def facilities_for_site(request, site_id):
+    try:
+        lga = LGA.objects.get(unique_slug=site_id)
+    except LGA.DoesNotExist, e:
+        return HttpResponseServerError("Site with ID: %s not found" % site_id)
+    d = facilities_dict_for_site(lga)
+    return HttpResponse(json.dumps(d))
+
+def facilities_dict_for_site(site):
     def non_null_value(t):
         # returns the first non-null value
         for val_k in ['string_value', 'float_value', 'boolean_value']:
             if t[val_k] is not None:
                 return t[val_k]
         return None
-    try:
-        lga = LGA.objects.get(unique_slug=site_id)
-    except LGA.DoesNotExist, e:
-        return HttpResponseServerError("Site with ID: %s not found" % site_id)
     oput = {
         'lgaName': lga.name,
         'stateName': lga.state.name,
@@ -57,11 +61,7 @@ def facilities_for_site(request, site_id, as_dict=False):
             d[facility] = dvoput
         oput['facilities'] = d
         oput['profileData'] = lga.get_latest_data()
-
-    if as_dict:
-        return oput
-    else:
-        return HttpResponse(json.dumps(oput))
+    return oput
 
 def facility(request, facility_id):
     """
