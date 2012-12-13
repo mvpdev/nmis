@@ -17,7 +17,7 @@ def home(request):
 def data_dictionary(request):
     return HttpResponse(Variable.get_full_data_dictionary())
 
-def facilities_for_site(request, site_id):
+def facilities_for_site(request, site_id, as_dict=False):
     def non_null_value(t):
         # returns the first non-null value
         for val_k in ['string_value', 'float_value', 'boolean_value']:
@@ -57,7 +57,11 @@ def facilities_for_site(request, site_id):
             d[facility] = dvoput
         oput['facilities'] = d
         oput['profileData'] = lga.get_latest_data()
-    return HttpResponse(json.dumps(oput))
+
+    if as_dict:
+        return oput
+    else:
+        return HttpResponse(json.dumps(oput))
 
 def facility(request, facility_id):
     """
