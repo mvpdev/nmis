@@ -26,6 +26,9 @@ csvs
 
 xform_manager_dataset.json
 
+# "nmis_ui_data" directory is created by the "export_static_data" management command
+nmis_ui_data/*
+
 data
 dropbox
 dropbox_data
