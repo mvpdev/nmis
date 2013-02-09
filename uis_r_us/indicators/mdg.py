@@ -36,7 +36,7 @@ def tmp_get_mdg_indicators(lga_data, g):
             [None, "HIV Prevalence", g("prevalence_of_hiv")],
             [None, "Percentage of men and women ever tested for HIV", g("percentage_of_individuals_tested_for_hiv_ever")],
             [None, "Percentage of children under five sleeping under insecticide-treated bednets", g("proportion_children_u5_sleeping_under_itns")],
-            [None, "Tuberculosis treatment success rate", None],
+            [None, "Tuberculosis treatment success rate", g("tb_treatment_success_rate")],
         ]),
         ("Goal 7: Ensure environmental sustainability", [
             [None, "Percentage of households with access to an improved water source", g("percentage_households_with_access_to_improved_water_sources")],

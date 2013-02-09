@@ -5,6 +5,12 @@ from django.conf import settings
 from facilities.models import LGAIndicator
 
 
+def read_overview_sectors_json():
+    with open(os.path.join(settings.PROJECT_ROOT, 'uis_r_us', 'indicators', 'overview.json'), 'r') as ff:
+        ex_json = ff.read()
+        ex_obj = json.loads(ex_json)
+    return ex_obj
+
 def tmp_variables_for_sector(sector_slug, lga_data, record_counts):
     def g(slug):
         value_dict = lga_data.get(slug, None)
@@ -27,9 +33,7 @@ def tmp_variables_for_sector(sector_slug, lga_data, record_counts):
             return None
         return "%s/%s" % (g(slug1), count)
 
-    with open(os.path.join(settings.PROJECT_ROOT, 'uis_r_us', 'indicators', 'overview.json'), 'r') as ff:
-        ex_json = ff.read()
-        ex_obj = json.loads(ex_json)
+    ex_obj = read_overview_sectors_json()
 
     def unpack_section(s):
         def pluck_g_or_h(val):

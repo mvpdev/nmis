@@ -116,13 +116,21 @@ def _sector_slugs():
           ]
         }
     
-def tmp_facility_indicators(lga, lga_data):
-    def g(slug):
+def tmp_facility_indicators(lga, lga_data, lookup_data=True):
+    def lga_data_lookup(slug):
         value_dict = lga_data.get(slug, None)
         if value_dict:
             return value_dict.get('value', None)
         else:
             return None
+
+    def repeat_back(slug): return slug
+
+    if lookup_data:
+        g = lga_data_lookup
+    else:
+        g = repeat_back
+
     ilist = []
     islugs = {}
     sdata = _sector_slugs()
