@@ -37,6 +37,10 @@ class Command(BaseCommand):
         os.mkdir(os.path.join(root_dir, "variables"))
         export_schema("nmis_ui_data/schema.json")
         export_default_sector_data("nmis_ui_data/presentation/sectors.json")
+
+        with open("nmis_ui_data/presentation/summary_sectors.json", 'w') as f:
+            f.write(json.dumps(lga_summary_sectors_obj()))
+
         export_default_variables_data("nmis_ui_data/variables/variables.json")
         with open("nmis_ui_data/presentation/facilities.json", "w") as f:
             prof_indicator_ids = _profile_indicator_ids()
@@ -139,6 +143,9 @@ def export_schema(location):
             "defaults": {
                 "presentation/sectors": [
                     "presentation/sectors.json"
+                ],
+                "presentation/summary_sectors": [
+                    "presentation/summary_sectors.json"
                 ],
                 "geo/districts": [
                     "geo/districts.json"
@@ -309,7 +316,7 @@ def _get_mdg_indicators(only_variable_slugs=False):
     else:
         return arr_o
 
-def lga_summary_sectors_obj(lga):
+def lga_summary_sectors_obj():
     obj = {}
     obj["view_details"] = [{u'modules': [u'overview_and_map', u'overview_facility_overview', u'overview_mdg_status'], u'id': u'overview', u'name': u'Overview'}, {u'modules': [u'sector_overview', u'sector_gap'], u'id': u'health', u'name': u'Health'}, {u'modules': [u'sector_overview', u'sector_gap'], u'id': u'education', u'name': u'Education'}, {u'modules': [u'sector_overview', u'sector_gap'], u'id': u'water', u'name': u'Water'}]
     obj["relevant_data"] = {
@@ -319,9 +326,7 @@ def lga_summary_sectors_obj(lga):
               "overview_mdg_status": _get_mdg_indicators()
           }
       }
-
     obj["sectors"] = _get_overview_sectors_structure()
-
     return obj
 
 from facilities.views import facilities_dict_for_site
@@ -347,9 +352,6 @@ def export_district(directory, district):
     # with open("%s/summary.json" % directory, 'w') as f:
     #     f.write(json.dumps(lga_summary_obj(district, data_for_display)))
 
-    with open("%s/presentation/summary_sectors.json" % directory, 'w') as f:
-        f.write(json.dumps(lga_summary_sectors_obj(district)))
-
     profile_data_list = []
     for key, val in profile_data.items():
         item = val.copy()
@@ -374,10 +376,9 @@ def export_districts(location, lgas):
         o['url_code'] = "%s/%s" % (lga.state.slug, lga.slug)
         o['lat_lng'] = lga.latlng_str
         lga_data_root = "districts/%s" % lga.unique_slug
-        modules = "data/facilities data/lga_data presentation/summary_sectors".split(" ")
         o['data_root'] = lga_data_root
         files = {}
-        for jf in modules:
+        for jf in ["data/%s" % m for m in ["facilities", "lga_data"]]:
             files[jf] = "%s.json" % jf
         o['files'] = files
         export_district("nmis_ui_data/%s" % lga_data_root, lga)
