@@ -210,6 +210,11 @@ function launchFacilities(lgaData, variableData, params) {
     			tileset: 'nigeria_overlays_white',
     			name: 'Nigeria'
     		}));
+
+            facilitiesMap.overlayMapTypes.insertAt(0, NMIS.MapMgr.mapboxLayer({
+    			tileset: 'Nigeria_Localities',
+    			name: 'Nigeria Localities'
+    		}));
         }
         // OSM google maps layer code from:
         // http://wiki.openstreetmap.org/wiki/Google_Maps_Example#Example_Using_Google_Maps_API_V3
