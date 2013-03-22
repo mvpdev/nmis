@@ -30,7 +30,7 @@ class Command(BaseCommand):
         if os.path.exists(root_dir):
             shutil.rmtree(root_dir)
         os.mkdir(root_dir)
-        lgas = LGA.objects.filter(data_available=True, data_loaded=True)
+        lgas = LGA.objects.all()
         os.mkdir(os.path.join(root_dir, "districts"))
         os.mkdir(os.path.join(root_dir, "geo"))
         os.mkdir(os.path.join(root_dir, "presentation"))
@@ -340,8 +340,8 @@ def export_district(directory, district):
                 'num_chews_per_1000': {'decimal_places': 3},
             })
 
-    facs = lga_fac_obj['facilities']
-    profile_data = lga_fac_obj['profileData']
+    facs = lga_fac_obj.get('facilities', [])
+    profile_data = lga_fac_obj.get('profileData', {})
     
     for subdir in ['presentation', 'data']:
         os.mkdir(os.path.join(directory, subdir))
@@ -371,6 +371,7 @@ def export_districts(location, lgas):
     def lga_to_obj(lga):
         o = {"group": lga.state.slug, \
             }
+        o['_lga_id'] = lga.id
         o['name'] = lga.name
         o['local_id'] = lga.slug
         o['url_code'] = "%s/%s" % (lga.state.slug, lga.slug)
@@ -378,7 +379,7 @@ def export_districts(location, lgas):
         lga_data_root = "districts/%s" % lga.unique_slug
         o['data_root'] = lga_data_root
         files = {}
-        for jf in ["data/%s" % m for m in ["facilities", "lga_data"]]:
+        for jf in ["data/facilities", "data/lga_data", "presentation/summary_sectors"]:
             files[jf] = "%s.json" % jf
         o['files'] = files
         export_district("nmis_ui_data/%s" % lga_data_root, lga)
