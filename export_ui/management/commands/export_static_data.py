@@ -340,7 +340,7 @@ def export_district(directory, district):
                 'num_chews_per_1000': {'decimal_places': 3},
             })
 
-    facs = lga_fac_obj.get('facilities', [])
+    facs = lga_fac_obj.get('facilities', {})
     profile_data = lga_fac_obj.get('profileData', {})
     
     for subdir in ['presentation', 'data']:
