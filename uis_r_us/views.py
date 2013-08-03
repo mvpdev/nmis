@@ -102,7 +102,7 @@ def dashboard(request, reqpath):
     context.site_title = "NMIS Nigeria"
     lga = None
 #    context.active_districts = active_districts()
-    context.nav_zones = get_nav_zones(filter_active=True)
+    context.nav_zones = get_nav_zones
     mls = []
     for map_layer in MapLayerDescription.objects.all():
         mls.append(model_to_dict(map_layer))
@@ -142,7 +142,7 @@ def get_nav_zones(filter_active=False):
                         filter(facility_count__gt=0). \
                         values('unique_slug', 'name', 'state_id', 'slug')
     else:
-        lga_list = LGA.objects.all().values('unique_slug', 'name', 'state_id')
+        lga_list = LGA.objects.all().values('unique_slug', 'name', 'state_id', 'slug')
     states = {}
     for state in state_list:
         sid = state.pop('id')
