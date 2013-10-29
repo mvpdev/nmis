@@ -15,6 +15,7 @@ from uis_r_us.indicators.gap_analysis import all_gap_indicators
 from uis_r_us.indicators.overview import tmp_variables_for_sector
 from uis_r_us.indicators.mdg import tmp_get_mdg_indicators
 from uis_r_us.indicators.facility import tmp_facility_indicators
+from django.http import HttpResponseBadRequest
 
 class RequestContext(OriginalRequestContext):
     def __init__(self, *args, **kwargs):
@@ -30,6 +31,18 @@ def _get_state_lga_from_first_two_items(arr):
     except Exception, e:
         return (False, False, False)
     return (state, lga, True)
+
+@login_required
+def gap_sheet(request, sector, unique_slug):
+    req_filename = os.path.join(settings.PROJECT_ROOT, 'gap_sheet', sector, unique_slug + '.pdf')
+    if os.path.exists(req_filename):
+        ffdata = ""
+        with open(req_filename, 'r') as f:
+            ffdata = f.read()
+        return HttpResponse(content=ffdata, mimetype='application/pdf')
+    return HttpResponseBadRequest("Bad request: %s" % req_filename)
+
+
 
 @login_required
 def nmis_view(request, state_id, lga_id, reqpath=""):
@@ -74,6 +87,7 @@ def nmis_view(request, state_id, lga_id, reqpath=""):
         return [plug_in_values(r) \
                         for r in all_gap_indicators().get(sector_slug, [])]
     context.lga_id = "'%s'" % context.lga.unique_slug
+    context.lga_number = context.lga.id
     context.sectors = [ \
         [s, tmp_variables_for_sector(s, data_for_display, {}), _gap_variables(s)] \
             for s in ['health', 'education', 'water']]

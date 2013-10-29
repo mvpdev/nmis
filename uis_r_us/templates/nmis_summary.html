@@ -5,9 +5,8 @@
 	{% if gap_indicators %}
         <div style="position:relative;">
             <p style="position:absolute; right: 0; top: -28px">
-                <a class="btn gap-analysis-activator" href="#">
-					<span class="non-gap">Switch to Gap Analysis</span>
-					<span class="gap-analysis">Switch to Overview</span>
+                <a class="btn" href="/gap_sheet/{{sector}}/{{lga.unique_slug}}__{{sector}}.pdf">
+					Download {{sector|title}} Sector Gap Sheet
                 </a>
             </p>
         </div>

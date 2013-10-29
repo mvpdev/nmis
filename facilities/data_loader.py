@@ -46,18 +46,22 @@ class DataLoader(object):
         self.lga_ids = lga_ids
 
         lgas = []
+	# populate lgas from db
         for lga_id in lga_ids:
             try:
                 lgas.append(LGA.objects.get(id=lga_id))
             except LGA.DoesNotExist:
                 continue
         available_lgas = []
+	# mark lgas in db as being in data_load_in_progress;
+	# populate available_lgas
         for lga in lgas:
             if lga.data_available:
                 lga.data_load_in_progress = True
                 lga.data_loaded = False
                 lga.save()
                 available_lgas.append(lga)
+	# go ahead and load the data
         for lga in available_lgas:
             self.lga_ids = [str(lga.id)]
             if self._debug:

@@ -36,6 +36,7 @@ urlpatterns = patterns('',
     url(r'^test_maps$', ui.test_map),
     url(r'^user_management/', include('user_management.urls')),
     url(r'^survey_photos/(?P<size>\S+)/(?P<photo_id>\S+)$', photo_redirect),
+    url(r'^gap_sheet/(?P<sector>\S+)/(?P<unique_slug>\S+).pdf$', ui.gap_sheet),
 
     url(r'^accounts/', include('registration.backends.default.urls')),
     url(r'^admin/', include(admin.site.urls)),

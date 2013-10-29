@@ -292,16 +292,32 @@ function _getNameFromFacility(f) {
 var S3orFormhubPhotoUrl = function(item, size_code) {
   var photo_url,
     sizes = {
-    "90": "-small",
-    "200": "-medium"
+    "90": "small",
+    "200": "medium"
   };
+//  if(item.formhub_photo_id) {
+//    photo_url = "https://formhub.s3.amazonaws.com/ossap/attachments/";
+//    if(size_code in sizes) {
+//      photo_url += item.formhub_photo_id.replace(".jpg", sizes[size_code] + ".jpg");
+//    } else {
+//      photo_url += item.formhub_photo_id;
+//    }
+//  } else if(item.s3_photo_id) {
+//    photo_url = NMIS.S3Photos.url(item.s3_photo_id || 'none1:none2', size_code);
+//  }
+//  return photo_url;
+
   if(item.formhub_photo_id) {
-    photo_url = "https://formhub.s3.amazonaws.com/ossap/attachments/";
+    var fin_size;
     if(size_code in sizes) {
-      photo_url += item.formhub_photo_id.replace(".jpg", sizes[size_code] + ".jpg");
+      fin_size = sizes[size_code];
     } else {
-      photo_url += item.formhub_photo_id;
+      fin_size = "original";
     }
+      photo_url = "https://formhub.org/attachment/" 
+                  + fin_size 
+                  + "?media_file=ossap/attachments/" 
+                  + item.formhub_photo_id;
   } else if(item.s3_photo_id) {
     photo_url = NMIS.S3Photos.url(item.s3_photo_id || 'none1:none2', size_code);
   }
